@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FiFacebook, FiPhone, FiHeart, FiCode, FiCoffee, FiZap, FiSettings, FiPower } from 'react-icons/fi';
+import { FiFacebook, FiPhone, FiHeart, FiCode, FiCoffee, FiZap, FiSettings, FiPower, FiDownload, FiUpload, FiFolder, FiDatabase } from 'react-icons/fi';
 import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
+import { exportData, importData } from '../database/db';
 import logoImg from '../../assets/icon.png';
 import techcombankLogo from '../../assets/techcombank-logo.png';
 import qrTechcombank from '../../assets/qr-techcombank.jpg';
@@ -8,6 +11,8 @@ import qrTechcombank from '../../assets/qr-techcombank.jpg';
 function AboutView() {
   const [autostartEnabled, setAutostartEnabled] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
   // Check autostart status on mount
   useEffect(() => {
@@ -43,6 +48,78 @@ function AboutView() {
     }
   };
 
+  // Export data to file
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const data = exportData();
+      const jsonString = JSON.stringify(data, null, 2);
+
+      const filePath = await save({
+        defaultPath: `hubogo-backup-${new Date().toISOString().split('T')[0]}.json`,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+
+      if (filePath) {
+        await writeTextFile(filePath, jsonString);
+        alert(`✅ Xuất dữ liệu thành công!\n\nĐã lưu tại:\n${filePath}\n\nTổng: ${data.tasks.length} công việc, ${data.categories.length} danh mục`);
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('❌ Xuất dữ liệu thất bại: ' + err.message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Import data from file
+  const handleImport = async () => {
+    setImportLoading(true);
+    try {
+      const filePath = await open({
+        multiple: false,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+
+      if (filePath) {
+        const content = await readTextFile(filePath);
+        const data = JSON.parse(content);
+
+        // Validate data structure
+        if (!data.tasks || !data.categories) {
+          throw new Error('File không đúng định dạng backup của HubogoNote');
+        }
+
+        const confirmImport = confirm(
+          `⚠️ CẢNH BÁO\n\n` +
+          `File backup chứa:\n` +
+          `• ${data.tasks.length} công việc\n` +
+          `• ${data.categories.length} danh mục\n\n` +
+          `Nhập dữ liệu này sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại!\n\n` +
+          `Bạn có chắc chắn muốn tiếp tục?`
+        );
+
+        if (confirmImport) {
+          importData(data);
+          alert('✅ Nhập dữ liệu thành công!\n\nVui lòng khởi động lại ứng dụng để thấy thay đổi.');
+          // Reload page to reflect changes
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert('❌ Nhập dữ liệu thất bại: ' + err.message);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-2xl mx-auto px-6 py-8">
@@ -50,7 +127,7 @@ function AboutView() {
         <div className="text-center mb-8">
           <img src={logoImg} alt="HubogoNote" className="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
           <h1 className="text-3xl font-bold text-primary-500 mb-2">HubogoNote</h1>
-          <p className="text-gray-500 dark:text-gray-400">Phiên bản 1.0.4</p>
+          <p className="text-gray-500 dark:text-gray-400">Phiên bản 1.0.6</p>
         </div>
 
         {/* Settings Section */}
@@ -92,6 +169,64 @@ function AboutView() {
                 />
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Data Backup Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <FiDatabase className="text-purple-500" />
+            Sao lưu dữ liệu
+          </h2>
+
+          <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
+            Xuất dữ liệu để backup ra ổ D: hoặc USB. Khi cài lại Windows, chỉ cần nhập file backup là khôi phục toàn bộ công việc.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Export button */}
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="flex items-center justify-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl transition-colors group"
+            >
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FiDownload className="text-white" size={20} />
+              </div>
+              <div className="text-left">
+                <div className="font-medium text-gray-800 dark:text-white">
+                  {exportLoading ? 'Đang xuất...' : 'Xuất dữ liệu'}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Lưu file backup
+                </div>
+              </div>
+            </button>
+
+            {/* Import button */}
+            <button
+              onClick={handleImport}
+              disabled={importLoading}
+              className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl transition-colors group"
+            >
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FiUpload className="text-white" size={20} />
+              </div>
+              <div className="text-left">
+                <div className="font-medium text-gray-800 dark:text-white">
+                  {importLoading ? 'Đang nhập...' : 'Nhập dữ liệu'}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Khôi phục từ backup
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              💡 <strong>Mẹo:</strong> Lưu file backup vào ổ D: hoặc Google Drive. Khi cài lại Windows, dữ liệu ổ D: không bị mất!
+            </p>
           </div>
         </div>
 

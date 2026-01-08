@@ -1,7 +1,26 @@
 // Changelog data for What's New dialog
-export const APP_VERSION = '1.0.5';
+export const APP_VERSION = '1.0.6';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.6',
+    date: '2026-01-08',
+    title: 'Sao lưu & Khôi phục dữ liệu',
+    highlights: [
+      '💾 Xuất dữ liệu ra file backup (JSON)',
+      '📂 Nhập dữ liệu từ file backup',
+      '🔒 Bảo vệ dữ liệu khi cài lại Windows',
+      '🌍 Landing page đa ngôn ngữ'
+    ],
+    changes: [
+      'Thêm nút Xuất dữ liệu - lưu toàn bộ công việc ra file',
+      'Thêm nút Nhập dữ liệu - khôi phục từ file backup',
+      'Hỗ trợ lưu backup ra ổ D: hoặc USB',
+      'Tự động detect ngôn ngữ browser cho landing page',
+      'Cập nhật landing page với download counter',
+      'Build cho cả Windows và macOS'
+    ]
+  },
   {
     version: '1.0.5',
     date: '2026-01-08',
