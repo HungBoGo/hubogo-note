@@ -777,24 +777,8 @@
       transform: translateY(0);
     }
 
-    /* Language switching - simple approach */
-    .lang-vi,
-    .lang-vi-inline {
-      display: none;
-    }
-
-    body.lang-vi .lang-en,
-    body.lang-vi .lang-en-inline {
-      display: none;
-    }
-
-    body.lang-vi .lang-vi {
-      display: block;
-    }
-
-    body.lang-vi .lang-vi-inline {
-      display: inline;
-    }
+    /* Language switching */
+    .hide { display: none !important; }
   </style>
 </head>
 <body>
@@ -1172,31 +1156,43 @@
   </footer>
 
   <script>
-    // Language switcher
+    // Language switcher - toggle visibility using .hide class
     function setLang(lang) {
+      const enElements = document.querySelectorAll('.lang-en, .lang-en-inline');
+      const viElements = document.querySelectorAll('.lang-vi, .lang-vi-inline');
+
       if (lang === 'vi') {
-        document.body.classList.add('lang-vi');
+        enElements.forEach(el => el.classList.add('hide'));
+        viElements.forEach(el => el.classList.remove('hide'));
       } else {
-        document.body.classList.remove('lang-vi');
+        enElements.forEach(el => el.classList.remove('hide'));
+        viElements.forEach(el => el.classList.add('hide'));
       }
 
       // Update button states
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.remove('active');
+      document.querySelectorAll('.lang-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (lang === 'vi' && i === 1) || (lang === 'en' && i === 0));
       });
-      event.target.classList.add('active');
 
       // Save preference
       localStorage.setItem('hubogo-lang', lang);
     }
 
-    // Load saved language
-    const savedLang = localStorage.getItem('hubogo-lang');
-    if (savedLang === 'vi') {
-      document.body.classList.add('lang-vi');
-      document.querySelectorAll('.lang-btn')[1].classList.add('active');
-      document.querySelectorAll('.lang-btn')[0].classList.remove('active');
-    }
+    // Initialize language on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedLang = localStorage.getItem('hubogo-lang') || 'en';
+      setLang(savedLang);
+    });
+
+    // Also run immediately for faster initial render
+    (function() {
+      const savedLang = localStorage.getItem('hubogo-lang') || 'en';
+      if (savedLang === 'vi') {
+        document.querySelectorAll('.lang-en, .lang-en-inline').forEach(el => el.classList.add('hide'));
+      } else {
+        document.querySelectorAll('.lang-vi, .lang-vi-inline').forEach(el => el.classList.add('hide'));
+      }
+    })();
 
     // Scroll animations
     const observerOptions = {
