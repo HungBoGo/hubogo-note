@@ -863,19 +863,19 @@
 
       <div class="stats">
         <div class="stat-item">
+          <div class="stat-value" id="download-count">-</div>
+          <div class="stat-label lang-en">Downloads</div>
+          <div class="stat-label lang-vi">Lượt tải</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="star-count">-</div>
+          <div class="stat-label lang-en">GitHub Stars</div>
+          <div class="stat-label lang-vi">GitHub Stars</div>
+        </div>
+        <div class="stat-item">
           <div class="stat-value">100%</div>
           <div class="stat-label lang-en">Free & Open Source</div>
           <div class="stat-label lang-vi">Miễn phí & Mã nguồn mở</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">0</div>
-          <div class="stat-label lang-en">Ads or Tracking</div>
-          <div class="stat-label lang-vi">Quảng cáo hay Theo dõi</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">∞</div>
-          <div class="stat-label lang-en">Tasks & Income</div>
-          <div class="stat-label lang-vi">Công việc & Thu nhập</div>
         </div>
       </div>
     </div>
@@ -1237,6 +1237,37 @@
         }
       });
     });
+
+    // Fetch GitHub stats (stars + downloads)
+    async function fetchGitHubStats() {
+      const repo = 'HungBoGo/hubogo-note';
+
+      try {
+        // Fetch repo info for stars
+        const repoRes = await fetch(`https://api.github.com/repos/${repo}`);
+        if (repoRes.ok) {
+          const repoData = await repoRes.json();
+          document.getElementById('star-count').textContent = repoData.stargazers_count || 0;
+        }
+
+        // Fetch releases for download count
+        const releasesRes = await fetch(`https://api.github.com/repos/${repo}/releases`);
+        if (releasesRes.ok) {
+          const releases = await releasesRes.json();
+          let totalDownloads = 0;
+          releases.forEach(release => {
+            release.assets.forEach(asset => {
+              totalDownloads += asset.download_count;
+            });
+          });
+          document.getElementById('download-count').textContent = totalDownloads;
+        }
+      } catch (e) {
+        console.log('Could not fetch GitHub stats');
+      }
+    }
+
+    fetchGitHubStats();
   </script>
 </body>
 </html>
