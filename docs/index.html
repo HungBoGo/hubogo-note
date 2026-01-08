@@ -1190,15 +1190,25 @@
       localStorage.setItem('hubogo-lang', lang);
     }
 
+    // Detect default language based on browser/system language
+    function getDefaultLang() {
+      const browserLang = navigator.language || navigator.userLanguage || '';
+      // If Vietnamese browser, default to Vietnamese
+      if (browserLang.startsWith('vi')) {
+        return 'vi';
+      }
+      return 'en';
+    }
+
     // Initialize language on page load
     document.addEventListener('DOMContentLoaded', function() {
-      const savedLang = localStorage.getItem('hubogo-lang') || 'en';
+      const savedLang = localStorage.getItem('hubogo-lang') || getDefaultLang();
       setLang(savedLang);
     });
 
     // Also run immediately for faster initial render
     (function() {
-      const savedLang = localStorage.getItem('hubogo-lang') || 'en';
+      const savedLang = localStorage.getItem('hubogo-lang') || getDefaultLang();
       if (savedLang === 'vi') {
         document.querySelectorAll('.lang-en, .lang-en-inline').forEach(el => el.classList.add('hide'));
       } else {
