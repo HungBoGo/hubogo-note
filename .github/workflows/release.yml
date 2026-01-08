@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: npm ci
@@ -43,7 +43,6 @@ jobs:
             - **macOS**: Chọn `.dmg` phù hợp với chip của bạn
               - Intel Mac: `x64.dmg`
               - Apple Silicon (M1/M2/M3): `aarch64.dmg`
-              - Universal (cả 2): `universal.dmg`
 
             ### Tính năng mới v1.0.5
             - 🎯 Phân loại: Kiếm tiền vs Đầu tư dài hạn
@@ -68,7 +67,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add Intel target
         run: rustup target add x86_64-apple-darwin
@@ -100,7 +99,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add ARM target
         run: rustup target add aarch64-apple-darwin
