@@ -370,7 +370,7 @@
 
     .pain-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 1.5rem;
     }
 
@@ -380,6 +380,9 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
     }
 
     .pain-card:hover {
@@ -402,6 +405,7 @@
     .pain-desc {
       color: var(--text-secondary);
       font-size: 0.95rem;
+      flex: 1;
     }
 
     /* Solution Section */
@@ -418,7 +422,7 @@
 
     .solution-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 2rem;
     }
 
@@ -430,6 +434,8 @@
       transition: all 0.3s;
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .solution-card::before {
@@ -478,6 +484,7 @@
 
     .solution-features {
       list-style: none;
+      margin-top: auto;
     }
 
     .solution-features li {
@@ -754,8 +761,16 @@
         gap: 2rem;
       }
 
-      .pain-grid, .solution-grid {
+      .pain-grid {
         grid-template-columns: 1fr;
+      }
+
+      .solution-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pain-card {
+        min-height: auto;
       }
 
       .nav-right {
