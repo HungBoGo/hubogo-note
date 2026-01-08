@@ -774,14 +774,17 @@
       transform: translateY(0);
     }
 
-    /* Language switching */
-    .lang-vi { display: none; }
-    body.lang-vi .lang-en { display: none; }
-    body.lang-vi .lang-vi { display: block; }
-    body.lang-vi .lang-vi-inline { display: inline; }
-    body.lang-vi .lang-en-inline { display: none; }
-    body:not(.lang-vi) .lang-vi-inline { display: none; }
-    body:not(.lang-vi) .lang-en-inline { display: inline; }
+    /* Language switching - Default: English */
+    .lang-vi { display: none !important; }
+    .lang-en { display: block; }
+    .lang-vi-inline { display: none !important; }
+    .lang-en-inline { display: inline; }
+
+    /* When Vietnamese is selected */
+    body.lang-vi .lang-en { display: none !important; }
+    body.lang-vi .lang-vi { display: block !important; }
+    body.lang-vi .lang-en-inline { display: none !important; }
+    body.lang-vi .lang-vi-inline { display: inline !important; }
   </style>
 </head>
 <body>
