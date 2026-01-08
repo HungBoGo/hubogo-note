@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HubogoNote - Task Manager for Hustlers</title>
+  <link rel="icon" type="image/png" href="./icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-card-hover: #1a1a25;
+      --purple-primary: #8b5cf6;
+      --purple-light: #a78bfa;
+      --purple-dark: #7c3aed;
+      --pink-accent: #ec4899;
+      --green-accent: #10b981;
+      --orange-accent: #f59e0b;
+      --text-primary: #ffffff;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-color: #27272a;
+      --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+      --gradient-dark: linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--purple-primary);
+      border-radius: 4px;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: var(--gradient-purple);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-purple);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      -webkit-text-fill-color: white;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--purple-light);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .lang-switcher {
+      display: flex;
+      background: var(--bg-card);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .lang-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .lang-btn.active {
+      background: var(--purple-primary);
+      color: white;
+    }
+
+    .btn-download-nav {
+      padding: 0.75rem 1.5rem;
+      background: var(--gradient-purple);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .btn-download-nav:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, -30px) rotate(5deg); }
+      66% { transform: translate(-20px, 20px) rotate(-5deg); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 50px;
+      font-size: 0.875rem;
+      color: var(--purple-light);
+      margin-bottom: 2rem;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green-accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 span {
+      background: var(--gradient-purple);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-tagline {
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .hero-description {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem;
+      background: var(--gradient-purple);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 1.125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      color: var(--text-primary);
+      font-size: 1.125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--purple-primary);
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 4rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      background: var(--gradient-purple);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Pain Points Section */
+    .pain-section {
+      padding: 6rem 2rem;
+      background: var(--bg-card);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-tag {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: rgba(236, 72, 153, 0.15);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      border-radius: 50px;
+      font-size: 0.875rem;
+      color: var(--pink-accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .pain-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .pain-card {
+      padding: 2rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      transition: all 0.3s;
+    }
+
+    .pain-card:hover {
+      border-color: var(--pink-accent);
+      transform: translateY(-5px);
+    }
+
+    .pain-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .pain-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--pink-accent);
+    }
+
+    .pain-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Solution Section */
+    .solution-section {
+      padding: 6rem 2rem;
+      background: var(--bg-dark);
+    }
+
+    .solution-tag {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--green-accent);
+    }
+
+    .solution-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+
+    .solution-card {
+      padding: 2.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .solution-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-purple);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .solution-card:hover {
+      border-color: var(--purple-primary);
+      transform: translateY(-5px);
+    }
+
+    .solution-card:hover::before {
+      opacity: 1;
+    }
+
+    .solution-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .solution-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .solution-desc {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .solution-features {
+      list-style: none;
+    }
+
+    .solution-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .solution-features li::before {
+      content: '✓';
+      color: var(--green-accent);
+      font-weight: bold;
+    }
+
+    /* Story Section */
+    .story-section {
+      padding: 6rem 2rem;
+      background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+    }
+
+    .story-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .story-quote {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      position: relative;
+      padding: 2rem;
+    }
+
+    .story-quote::before {
+      content: '"';
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 5rem;
+      color: var(--purple-primary);
+      opacity: 0.3;
+      font-family: Georgia, serif;
+      line-height: 1;
+    }
+
+    .story-author {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .author-avatar {
+      width: 60px;
+      height: 60px;
+      background: var(--gradient-purple);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .author-info {
+      text-align: left;
+    }
+
+    .author-name {
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+
+    .author-role {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Download Section */
+    .download-section {
+      padding: 6rem 2rem;
+      background: var(--bg-dark);
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .download-card {
+      padding: 2.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .download-card:hover {
+      border-color: var(--purple-primary);
+      transform: translateY(-5px);
+    }
+
+    .download-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-platform {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .download-info {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 1rem;
+      background: var(--gradient-purple);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .download-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+    }
+
+    .download-btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      margin-top: 0.75rem;
+    }
+
+    .download-btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--purple-primary);
+      box-shadow: none;
+    }
+
+    /* Footer */
+    footer {
+      padding: 4rem 2rem 2rem;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .footer-brand {
+      max-width: 300px;
+    }
+
+    .footer-brand .logo {
+      margin-bottom: 1rem;
+    }
+
+    .footer-brand p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .footer-links h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .footer-links ul {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--purple-light);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .social-link {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .social-link:hover {
+      border-color: var(--purple-primary);
+      color: var(--purple-light);
+    }
+
+    /* Mobile Menu */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .stats {
+        gap: 2rem;
+      }
+
+      .pain-grid, .solution-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-right {
+        gap: 0.5rem;
+      }
+
+      .btn-download-nav {
+        display: none;
+      }
+    }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s, transform 0.6s;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Language switching */
+    .lang-vi { display: none; }
+    body.lang-vi .lang-en { display: none; }
+    body.lang-vi .lang-vi { display: block; }
+    body.lang-vi .lang-vi-inline { display: inline; }
+    body.lang-vi .lang-en-inline { display: none; }
+    body:not(.lang-vi) .lang-vi-inline { display: none; }
+    body:not(.lang-vi) .lang-en-inline { display: inline; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <div class="logo">
+        <div class="logo-icon">📝</div>
+        HubogoNote
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="#features" class="lang-en-inline">Features</a><a href="#features" class="lang-vi-inline">Tính năng</a></li>
+        <li><a href="#download" class="lang-en-inline">Download</a><a href="#download" class="lang-vi-inline">Tải về</a></li>
+        <li><a href="#story" class="lang-en-inline">Our Story</a><a href="#story" class="lang-vi-inline">Câu chuyện</a></li>
+        <li><a href="https://github.com/HungBoGo/hubogo-note" target="_blank">GitHub</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" onclick="setLang('vi')">VI</button>
+        </div>
+        <a href="#download" class="btn-download-nav">
+          <span class="lang-en-inline">Download Free</span>
+          <span class="lang-vi-inline">Tải miễn phí</span>
+        </a>
+      </div>
+
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span class="lang-en">Version 1.0.5 - Now Available</span>
+        <span class="lang-vi">Phiên bản 1.0.5 - Có sẵn ngay</span>
+      </div>
+
+      <h1>
+        <span class="lang-en">Stop Forgetting.<br>Start <span>Earning.</span></span>
+        <span class="lang-vi">Đừng Quên Nữa.<br>Hãy <span>Kiếm Tiền.</span></span>
+      </h1>
+
+      <p class="hero-tagline">
+        <span class="lang-en">The task manager built for hustlers who track income, not just tasks.</span>
+        <span class="lang-vi">Ứng dụng quản lý công việc dành cho người kiếm tiền, không chỉ ghi chú.</span>
+      </p>
+
+      <p class="hero-description">
+        <span class="lang-en">Tired of note apps that can't tell you how much money you're making? We were too. So we built HubogoNote - where every task has a price tag.</span>
+        <span class="lang-vi">Chán các app ghi chú không cho biết bạn kiếm được bao nhiêu? Chúng tôi cũng vậy. Nên chúng tôi tạo ra HubogoNote - nơi mỗi công việc đều có giá trị.</span>
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#download" class="btn-primary">
+          <span>⬇️</span>
+          <span class="lang-en">Download for Free</span>
+          <span class="lang-vi">Tải về miễn phí</span>
+        </a>
+        <a href="https://github.com/HungBoGo/hubogo-note" target="_blank" class="btn-secondary">
+          <span>⭐</span>
+          <span class="lang-en">Star on GitHub</span>
+          <span class="lang-vi">Star trên GitHub</span>
+        </a>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value">100%</div>
+          <div class="stat-label lang-en">Free & Open Source</div>
+          <div class="stat-label lang-vi">Miễn phí & Mã nguồn mở</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">0</div>
+          <div class="stat-label lang-en">Ads or Tracking</div>
+          <div class="stat-label lang-vi">Quảng cáo hay Theo dõi</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">∞</div>
+          <div class="stat-label lang-en">Tasks & Income</div>
+          <div class="stat-label lang-vi">Công việc & Thu nhập</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pain Points Section -->
+  <section class="pain-section" id="pain">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">
+          <span class="lang-en">😤 The Problem</span>
+          <span class="lang-vi">😤 Vấn đề</span>
+        </div>
+        <h2 class="section-title">
+          <span class="lang-en">We've Been There. It Sucks.</span>
+          <span class="lang-vi">Chúng tôi đã trải qua. Thật tệ.</span>
+        </h2>
+        <p class="section-subtitle">
+          <span class="lang-en">Every task app out there is missing something crucial for people who actually need to make money.</span>
+          <span class="lang-vi">Mọi ứng dụng ghi chú ngoài kia đều thiếu điều quan trọng với người cần kiếm tiền.</span>
+        </p>
+      </div>
+
+      <div class="pain-grid">
+        <div class="pain-card fade-in">
+          <div class="pain-icon">💸</div>
+          <h3 class="pain-title lang-en">"How much did I make this month?"</h3>
+          <h3 class="pain-title lang-vi">"Tháng này tôi kiếm được bao nhiêu?"</h3>
+          <p class="pain-desc lang-en">You finish 50 tasks but have no idea if you're actually making progress financially. Sound familiar?</p>
+          <p class="pain-desc lang-vi">Bạn hoàn thành 50 việc nhưng không biết tình hình tài chính thế nào. Quen thuộc chưa?</p>
+        </div>
+
+        <div class="pain-card fade-in">
+          <div class="pain-icon">🔥</div>
+          <h3 class="pain-title lang-en">"What should I do first?"</h3>
+          <h3 class="pain-title lang-vi">"Nên làm cái gì trước?"</h3>
+          <p class="pain-desc lang-en">100 tasks, all marked "important". No way to know which one actually pays the bills TODAY.</p>
+          <p class="pain-desc lang-vi">100 việc, tất cả đều "quan trọng". Không biết việc nào mang tiền về NGAY BÂY GIỜ.</p>
+        </div>
+
+        <div class="pain-card fade-in">
+          <div class="pain-icon">🎯</div>
+          <h3 class="pain-title lang-en">"I keep forgetting my side projects"</h3>
+          <h3 class="pain-title lang-vi">"Tôi cứ quên dự án phụ của mình"</h3>
+          <p class="pain-desc lang-en">Your AI trading project? Your course idea? Lost in a sea of urgent tasks that aren't even important.</p>
+          <p class="pain-desc lang-vi">Dự án AI Trading? Ý tưởng khóa học? Chìm nghỉm trong đống việc gấp nhưng không quan trọng.</p>
+        </div>
+
+        <div class="pain-card fade-in">
+          <div class="pain-icon">😵</div>
+          <h3 class="pain-title lang-en">"Notion is overkill, Notes is useless"</h3>
+          <h3 class="pain-title lang-vi">"Notion quá phức tạp, Notes thì vô dụng"</h3>
+          <p class="pain-desc lang-en">You don't need a second brain. You need a tool that tells you what to do and how much you'll earn.</p>
+          <p class="pain-desc lang-vi">Bạn không cần "second brain". Bạn cần công cụ cho biết làm gì và kiếm được bao nhiêu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution Section -->
+  <section class="solution-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag solution-tag">
+          <span class="lang-en">✨ The Solution</span>
+          <span class="lang-vi">✨ Giải pháp</span>
+        </div>
+        <h2 class="section-title">
+          <span class="lang-en">Built Different. Built for Hustlers.</span>
+          <span class="lang-vi">Khác biệt. Dành cho người chiến đấu.</span>
+        </h2>
+        <p class="section-subtitle">
+          <span class="lang-en">We got frustrated and built exactly what we needed. Now it's yours.</span>
+          <span class="lang-vi">Chúng tôi bực mình và tự code thứ mình cần. Giờ nó là của bạn.</span>
+        </p>
+      </div>
+
+      <div class="solution-grid">
+        <div class="solution-card fade-in">
+          <div class="solution-icon">💰</div>
+          <h3 class="solution-title lang-en">Income Tracking Built-In</h3>
+          <h3 class="solution-title lang-vi">Theo dõi thu nhập tích hợp</h3>
+          <p class="solution-desc lang-en">Every task can have a money value. See your daily, weekly, monthly income at a glance.</p>
+          <p class="solution-desc lang-vi">Mỗi việc có thể gắn số tiền. Xem thu nhập ngày, tuần, tháng trong nháy mắt.</p>
+          <ul class="solution-features">
+            <li class="lang-en">VND & USD support with live exchange rate</li>
+            <li class="lang-vi">Hỗ trợ VND & USD với tỷ giá thực</li>
+            <li class="lang-en">Celebration banners at 5M, 10M, 50M milestones</li>
+            <li class="lang-vi">Banner chúc mừng khi đạt 5M, 10M, 50M</li>
+            <li class="lang-en">Track paid vs unpaid work</li>
+            <li class="lang-vi">Theo dõi việc đã/chưa thanh toán</li>
+          </ul>
+        </div>
+
+        <div class="solution-card fade-in">
+          <div class="solution-icon">🎯</div>
+          <h3 class="solution-title lang-en">Eisenhower Matrix Priority</h3>
+          <h3 class="solution-title lang-vi">Ưu tiên theo Ma trận Eisenhower</h3>
+          <p class="solution-desc lang-en">Stop guessing. The app tells you exactly what to do based on importance, urgency, AND money.</p>
+          <p class="solution-desc lang-vi">Đừng đoán mò. App cho biết chính xác làm gì dựa trên độ quan trọng, gấp, VÀ tiền.</p>
+          <ul class="solution-features">
+            <li class="lang-en">Q1-Q4 quadrant auto-sorting</li>
+            <li class="lang-vi">Tự động sắp xếp theo Q1-Q4</li>
+            <li class="lang-en">Smart priority scoring</li>
+            <li class="lang-vi">Tính điểm ưu tiên thông minh</li>
+            <li class="lang-en">Visual priority dashboard</li>
+            <li class="lang-vi">Dashboard ưu tiên trực quan</li>
+          </ul>
+        </div>
+
+        <div class="solution-card fade-in">
+          <div class="solution-icon">🚀</div>
+          <h3 class="solution-title lang-en">Long-term Project Tracking</h3>
+          <h3 class="solution-title lang-vi">Theo dõi dự án dài hạn</h3>
+          <p class="solution-desc lang-en">Your side hustle deserves attention. Daily check-ins keep your future investments alive.</p>
+          <p class="solution-desc lang-vi">Dự án phụ của bạn đáng được quan tâm. Điểm danh hàng ngày giữ tương lai sống.</p>
+          <ul class="solution-features">
+            <li class="lang-en">Daily check-in with streak tracking</li>
+            <li class="lang-vi">Điểm danh hàng ngày với streak</li>
+            <li class="lang-en">Separate "Income" vs "Investment" categories</li>
+            <li class="lang-vi">Phân loại "Kiếm tiền" vs "Đầu tư"</li>
+            <li class="lang-en">Smart reminders for forgotten projects</li>
+            <li class="lang-vi">Nhắc nhở thông minh cho dự án bị quên</li>
+          </ul>
+        </div>
+
+        <div class="solution-card fade-in">
+          <div class="solution-icon">⚡</div>
+          <h3 class="solution-title lang-en">Desktop-First, Lightning Fast</h3>
+          <h3 class="solution-title lang-vi">Desktop-First, Nhanh như chớp</h3>
+          <p class="solution-desc lang-en">Built with Tauri (Rust). Tiny, fast, no Electron bloat. Starts with Windows.</p>
+          <p class="solution-desc lang-vi">Xây bằng Tauri (Rust). Nhỏ gọn, nhanh, không phình như Electron. Khởi động cùng Windows.</p>
+          <ul class="solution-features">
+            <li class="lang-en">~10MB installer (not 200MB)</li>
+            <li class="lang-vi">Cài đặt ~10MB (không phải 200MB)</li>
+            <li class="lang-en">Auto-start option</li>
+            <li class="lang-vi">Tùy chọn tự khởi động</li>
+            <li class="lang-en">Remembers window position</li>
+            <li class="lang-vi">Nhớ vị trí cửa sổ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Story Section -->
+  <section class="story-section" id="story">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">
+          <span class="lang-en">💡 Our Story</span>
+          <span class="lang-vi">💡 Câu chuyện</span>
+        </div>
+        <h2 class="section-title">
+          <span class="lang-en">We Built This Out of Frustration</span>
+          <span class="lang-vi">Chúng tôi code vì bực mình</span>
+        </h2>
+      </div>
+
+      <div class="story-content">
+        <blockquote class="story-quote">
+          <span class="lang-en">I tried everything. Notion, Todoist, TickTick, Obsidian, Apple Notes, Google Keep... None of them could answer one simple question: "Am I actually making money, or just being busy?" So one night at 2am, frustrated and tired, I opened VS Code and started building. This is the result.</span>
+          <span class="lang-vi">Tôi đã thử mọi thứ. Notion, Todoist, TickTick, Obsidian, Apple Notes, Google Keep... Không cái nào trả lời được một câu hỏi đơn giản: "Tôi đang kiếm tiền thật, hay chỉ bận rộn?" Thế là một đêm 2h sáng, bực bội và mệt mỏi, tôi mở VS Code và bắt đầu code. Đây là kết quả.</span>
+        </blockquote>
+
+        <div class="story-author">
+          <div class="author-avatar">👨‍💻</div>
+          <div class="author-info">
+            <div class="author-name">Hubogo Team</div>
+            <div class="author-role lang-en">Freelancer, Builder, Sleep-deprived Developer</div>
+            <div class="author-role lang-vi">Freelancer, Builder, Developer thiếu ngủ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section -->
+  <section class="download-section" id="download">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag solution-tag">
+          <span class="lang-en">⬇️ Download</span>
+          <span class="lang-vi">⬇️ Tải về</span>
+        </div>
+        <h2 class="section-title">
+          <span class="lang-en">Get HubogoNote Now</span>
+          <span class="lang-vi">Tải HubogoNote ngay</span>
+        </h2>
+        <p class="section-subtitle">
+          <span class="lang-en">Free forever. No account needed. Your data stays on your computer.</span>
+          <span class="lang-vi">Miễn phí mãi mãi. Không cần tài khoản. Dữ liệu nằm trên máy bạn.</span>
+        </p>
+      </div>
+
+      <div class="download-grid">
+        <div class="download-card fade-in">
+          <div class="download-icon">🪟</div>
+          <h3 class="download-platform">Windows</h3>
+          <p class="download-info">Windows 10/11 (64-bit)</p>
+          <a href="https://github.com/HungBoGo/hubogo-note/releases/latest/download/HubogoNote_1.0.5_x64-setup.exe" class="download-btn">
+            <span class="lang-en">Download .exe</span>
+            <span class="lang-vi">Tải .exe</span>
+          </a>
+          <a href="https://github.com/HungBoGo/hubogo-note/releases/latest/download/HubogoNote_1.0.5_x64_en-US.msi" class="download-btn download-btn-secondary">
+            <span class="lang-en">Download .msi</span>
+            <span class="lang-vi">Tải .msi</span>
+          </a>
+        </div>
+
+        <div class="download-card fade-in">
+          <div class="download-icon">🍎</div>
+          <h3 class="download-platform">macOS Intel</h3>
+          <p class="download-info">macOS 10.13+ (Intel)</p>
+          <a href="https://github.com/HungBoGo/hubogo-note/releases/latest/download/HubogoNote_1.0.5_x64.dmg" class="download-btn">
+            <span class="lang-en">Download .dmg</span>
+            <span class="lang-vi">Tải .dmg</span>
+          </a>
+        </div>
+
+        <div class="download-card fade-in">
+          <div class="download-icon">🍏</div>
+          <h3 class="download-platform">macOS Apple Silicon</h3>
+          <p class="download-info">macOS 11+ (M1/M2/M3)</p>
+          <a href="https://github.com/HungBoGo/hubogo-note/releases/latest/download/HubogoNote_1.0.5_aarch64.dmg" class="download-btn">
+            <span class="lang-en">Download .dmg</span>
+            <span class="lang-vi">Tải .dmg</span>
+          </a>
+        </div>
+      </div>
+
+      <p style="text-align: center; margin-top: 2rem; color: var(--text-muted);">
+        <span class="lang-en">Or build from source: </span>
+        <span class="lang-vi">Hoặc build từ mã nguồn: </span>
+        <a href="https://github.com/HungBoGo/hubogo-note" style="color: var(--purple-light);">github.com/HungBoGo/hubogo-note</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon">📝</div>
+          HubogoNote
+        </div>
+        <p class="lang-en">The task manager for people who need to make money, not just stay organized.</p>
+        <p class="lang-vi">Ứng dụng quản lý công việc cho người cần kiếm tiền, không chỉ sắp xếp.</p>
+        <div class="social-links">
+          <a href="https://github.com/HungBoGo/hubogo-note" class="social-link" target="_blank">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <h4 class="lang-en">Product</h4>
+        <h4 class="lang-vi">Sản phẩm</h4>
+        <ul>
+          <li><a href="#features" class="lang-en">Features</a><a href="#features" class="lang-vi">Tính năng</a></li>
+          <li><a href="#download" class="lang-en">Download</a><a href="#download" class="lang-vi">Tải về</a></li>
+          <li><a href="https://github.com/HungBoGo/hubogo-note/releases">Changelog</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4 class="lang-en">Resources</h4>
+        <h4 class="lang-vi">Tài nguyên</h4>
+        <ul>
+          <li><a href="https://github.com/HungBoGo/hubogo-note" class="lang-en">Source Code</a><a href="https://github.com/HungBoGo/hubogo-note" class="lang-vi">Mã nguồn</a></li>
+          <li><a href="https://github.com/HungBoGo/hubogo-note/issues" class="lang-en">Report Bug</a><a href="https://github.com/HungBoGo/hubogo-note/issues" class="lang-vi">Báo lỗi</a></li>
+          <li><a href="https://github.com/HungBoGo/hubogo-note/issues" class="lang-en">Request Feature</a><a href="https://github.com/HungBoGo/hubogo-note/issues" class="lang-vi">Yêu cầu tính năng</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4 class="lang-en">Legal</h4>
+        <h4 class="lang-vi">Pháp lý</h4>
+        <ul>
+          <li><a href="#" class="lang-en">MIT License</a><a href="#" class="lang-vi">Giấy phép MIT</a></li>
+          <li><a href="#" class="lang-en">Privacy (None collected!)</a><a href="#" class="lang-vi">Quyền riêng tư (Không thu thập!)</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2025 HubogoNote. <span class="lang-en">Made with ❤️ and lots of ☕ by frustrated developers.</span><span class="lang-vi">Làm bằng ❤️ và nhiều ☕ bởi những developer bực mình.</span></p>
+    </div>
+  </footer>
+
+  <script>
+    // Language switcher
+    function setLang(lang) {
+      if (lang === 'vi') {
+        document.body.classList.add('lang-vi');
+      } else {
+        document.body.classList.remove('lang-vi');
+      }
+
+      // Update button states
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Save preference
+      localStorage.setItem('hubogo-lang', lang);
+    }
+
+    // Load saved language
+    const savedLang = localStorage.getItem('hubogo-lang');
+    if (savedLang === 'vi') {
+      document.body.classList.add('lang-vi');
+      document.querySelectorAll('.lang-btn')[1].classList.add('active');
+      document.querySelectorAll('.lang-btn')[0].classList.remove('active');
+    }
+
+    // Scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
