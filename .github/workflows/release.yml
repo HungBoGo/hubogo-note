@@ -1,0 +1,120 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri (Windows)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'HubogoNote v__VERSION__'
+          releaseBody: |
+            ## HubogoNote v__VERSION__
+
+            ### Downloads
+            - **Windows**: Chọn `.exe` (NSIS installer) hoặc `.msi`
+            - **macOS**: Chọn `.dmg` phù hợp với chip của bạn
+              - Intel Mac: `x64.dmg`
+              - Apple Silicon (M1/M2/M3): `aarch64.dmg`
+              - Universal (cả 2): `universal.dmg`
+
+            ### Tính năng mới v1.0.5
+            - 🎯 Phân loại: Kiếm tiền vs Đầu tư dài hạn
+            - 📅 Điểm danh hàng ngày cho dự án dài hạn
+            - 🔥 Streak tracking - đếm ngày liên tục
+            - 🎉 Banner chúc mừng đạt mốc thu nhập
+            - 💡 Smart advice - lời khuyên thông minh
+            - 🔄 What's New dialog khi update
+          releaseDraft: true
+          prerelease: false
+
+  build-macos-intel:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Add Intel target
+        run: rustup target add x86_64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri (macOS Intel)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'HubogoNote v__VERSION__'
+          releaseDraft: true
+          prerelease: false
+          args: '--target x86_64-apple-darwin'
+
+  build-macos-arm:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Add ARM target
+        run: rustup target add aarch64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri (macOS ARM)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'HubogoNote v__VERSION__'
+          releaseDraft: true
+          prerelease: false
+          args: '--target aarch64-apple-darwin'

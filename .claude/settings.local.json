@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:vite:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(rustc:*)",
+      "Bash(cargo --version:*)",
+      "Bash(cmd /c:*)",
+      "Bash(C:Users%USERNAME%.cargobinrustc.exe --version)",
+      "Bash(where:*)",
+      "Bash(npx tauri init)",
+      "Bash(mkdir:*)",
+      "Bash(npm run tauri:build:*)",
+      "Bash(cargo clean:*)",
+      "Bash(findstr:*)",
+      "Bash(rm:*)",
+      "Bash(export PATH=\"/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64:$PATH\")",
+      "Bash(curl:*)",
+      "Bash(timeout 15 npm run dev:vite:*)",
+      "Bash(npm run build:vite:*)",
+      "Bash(npm add:*)",
+      "Bash(npm run build:tauri:*)",
+      "Bash(npm run tauri:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
