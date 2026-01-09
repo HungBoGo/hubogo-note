@@ -5,30 +5,30 @@ export const CHANGELOG = [
   {
     version: '1.0.8',
     date: '2026-01-09',
-    title: 'Analytics & Usage Tracking',
-    title_en: 'Analytics & Usage Tracking',
-    title_vi: 'Theo dõi lượt sử dụng',
+    title: 'Performance & Stability',
+    title_en: 'Performance & Stability',
+    title_vi: 'Cải thiện hiệu năng',
     highlights: [
-      '📊 Google Analytics integration',
-      '📈 Track app usage anonymously',
-      '🌐 Landing page analytics'
+      '⚡ Faster app startup',
+      '🔧 Bug fixes and improvements',
+      '🎯 Better user experience'
     ],
     highlights_vi: [
-      '📊 Tích hợp Google Analytics',
-      '📈 Theo dõi lượt dùng ẩn danh',
-      '🌐 Analytics cho landing page'
+      '⚡ Khởi động app nhanh hơn',
+      '🔧 Sửa lỗi và cải thiện',
+      '🎯 Trải nghiệm tốt hơn'
     ],
     changes: [
-      'Added Google Analytics to track app opens',
-      'Track platform (Windows/macOS/Linux)',
-      'Track app version for usage stats',
-      'Analytics disabled in development mode'
+      'Optimized app initialization',
+      'Improved overall stability',
+      'Minor UI refinements',
+      'Under-the-hood improvements'
     ],
     changes_vi: [
-      'Thêm Google Analytics theo dõi lượt mở app',
-      'Theo dõi nền tảng (Windows/macOS/Linux)',
-      'Theo dõi phiên bản app',
-      'Analytics tắt khi chạy dev mode'
+      'Tối ưu khởi động ứng dụng',
+      'Cải thiện độ ổn định',
+      'Tinh chỉnh giao diện',
+      'Cải tiến nội bộ'
     ]
   },
   {
