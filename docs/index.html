@@ -95,6 +95,8 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      text-decoration: none;
+      cursor: pointer;
     }
 
     .logo-icon {
@@ -744,6 +746,44 @@
       color: var(--text-primary);
       font-size: 1.5rem;
       cursor: pointer;
+      padding: 0.5rem;
+      z-index: 1001;
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.98);
+      z-index: 999;
+      padding-top: 80px;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .mobile-menu.active {
+      display: flex;
+    }
+
+    .mobile-menu a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+      font-weight: 600;
+      padding: 1rem 2rem;
+      transition: color 0.3s;
+    }
+
+    .mobile-menu a:hover {
+      color: var(--green-light);
+    }
+
+    .mobile-menu .btn-primary {
+      margin-top: 1rem;
     }
 
     /* Responsive */
@@ -806,10 +846,10 @@
   <!-- Navigation -->
   <nav>
     <div class="nav-container">
-      <div class="logo">
+      <a href="#" class="logo" onclick="scrollToTop(event)">
         <img src="./icon.png" alt="HubogoNote" class="logo-icon">
         HubogoNote
-      </div>
+      </a>
 
       <ul class="nav-links">
         <li><a href="#features" class="lang-en-inline">Features</a><a href="#features" class="lang-vi-inline">Tính năng</a></li>
@@ -829,9 +869,31 @@
         </a>
       </div>
 
-      <button class="mobile-menu-btn">☰</button>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
     </div>
   </nav>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" onclick="closeMobileMenu()">
+      <span class="lang-en">Features</span>
+      <span class="lang-vi">Tính năng</span>
+    </a>
+    <a href="#download" onclick="closeMobileMenu()">
+      <span class="lang-en">Download</span>
+      <span class="lang-vi">Tải về</span>
+    </a>
+    <a href="#story" onclick="closeMobileMenu()">
+      <span class="lang-en">Our Story</span>
+      <span class="lang-vi">Câu chuyện</span>
+    </a>
+    <a href="https://github.com/HungBoGo/hubogo-note" target="_blank" onclick="closeMobileMenu()">GitHub</a>
+    <a href="#download" class="btn-primary" onclick="closeMobileMenu()">
+      <span>⬇️</span>
+      <span class="lang-en">Download Free</span>
+      <span class="lang-vi">Tải miễn phí</span>
+    </a>
+  </div>
 
   <!-- Hero Section -->
   <section class="hero">
@@ -1313,6 +1375,30 @@
     }
 
     fetchGitHubStats();
+
+    // Scroll to top function
+    function scrollToTop(e) {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    // Mobile menu functions
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.mobile-menu-btn');
+      menu.classList.toggle('active');
+      btn.textContent = menu.classList.contains('active') ? '✕' : '☰';
+    }
+
+    function closeMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.mobile-menu-btn');
+      menu.classList.remove('active');
+      btn.textContent = '☰';
+    }
   </script>
 </body>
 </html>
