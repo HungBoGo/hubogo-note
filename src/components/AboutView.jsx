@@ -15,7 +15,7 @@ function AboutView() {
         <div className="text-center mb-8">
           <img src={logoImg} alt="HubogoNote" className="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
           <h1 className="text-3xl font-bold text-primary-500 mb-2">HubogoNote</h1>
-          <p className="text-gray-500 dark:text-gray-400">{t('version')} 1.0.7</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('version')} 1.0.8</p>
         </div>
 
         {/* Story Section */}
