@@ -1,7 +1,36 @@
 // Changelog data for What's New dialog
-export const APP_VERSION = '1.0.7';
+export const APP_VERSION = '1.0.8';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.8',
+    date: '2026-01-09',
+    title: 'Analytics & Usage Tracking',
+    title_en: 'Analytics & Usage Tracking',
+    title_vi: 'Theo dõi lượt sử dụng',
+    highlights: [
+      '📊 Google Analytics integration',
+      '📈 Track app usage anonymously',
+      '🌐 Landing page analytics'
+    ],
+    highlights_vi: [
+      '📊 Tích hợp Google Analytics',
+      '📈 Theo dõi lượt dùng ẩn danh',
+      '🌐 Analytics cho landing page'
+    ],
+    changes: [
+      'Added Google Analytics to track app opens',
+      'Track platform (Windows/macOS/Linux)',
+      'Track app version for usage stats',
+      'Analytics disabled in development mode'
+    ],
+    changes_vi: [
+      'Thêm Google Analytics theo dõi lượt mở app',
+      'Theo dõi nền tảng (Windows/macOS/Linux)',
+      'Theo dõi phiên bản app',
+      'Analytics tắt khi chạy dev mode'
+    ]
+  },
   {
     version: '1.0.7',
     date: '2026-01-09',
