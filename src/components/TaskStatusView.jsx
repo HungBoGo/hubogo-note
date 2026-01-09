@@ -9,9 +9,11 @@ import {
 import useStore from '../store/useStore';
 import TaskItem from './TaskItem';
 import { sortTasksByPriority, getWeights, QUADRANTS } from '../utils/priorityEngine';
+import { useTranslation } from '../utils/i18n';
 
 function TaskStatusView() {
   const { tasks, categories, searchQuery } = useStore();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState('all'); // all, pending, completed
   const [sortBy, setSortBy] = useState('priority'); // priority, date, deadline
 
@@ -77,9 +79,9 @@ function TaskStatusView() {
   };
 
   const tabs = [
-    { id: 'all', label: 'Tất cả', icon: FiList, count: counts.all },
-    { id: 'pending', label: 'Đang làm', icon: FiClock, count: counts.pending },
-    { id: 'completed', label: 'Hoàn thành', icon: FiCheckCircle, count: counts.completed }
+    { id: 'all', label: t('status_all'), icon: FiList, count: counts.all },
+    { id: 'pending', label: t('status_pending'), icon: FiClock, count: counts.pending },
+    { id: 'completed', label: t('status_completed'), icon: FiCheckCircle, count: counts.completed }
   ];
 
   return (
@@ -89,7 +91,7 @@ function TaskStatusView() {
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
             <FiList className="text-primary-500" />
-            Trạng thái công việc
+            {t('task_status_title')}
           </h1>
 
           {/* Sort dropdown */}
@@ -100,9 +102,9 @@ function TaskStatusView() {
               onChange={(e) => setSortBy(e.target.value)}
               className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <option value="priority">Theo ưu tiên</option>
-              <option value="date">Theo ngày tạo</option>
-              <option value="deadline">Theo deadline</option>
+              <option value="priority">{t('sort_priority')}</option>
+              <option value="date">{t('sort_date')}</option>
+              <option value="deadline">{t('sort_deadline')}</option>
             </select>
           </div>
         </div>
@@ -145,14 +147,14 @@ function TaskStatusView() {
               )}
             </div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-              {activeTab === 'completed' ? 'Chưa có việc hoàn thành' : 'Không có công việc'}
+              {activeTab === 'completed' ? t('no_completed_tasks') : t('no_tasks')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
               {activeTab === 'completed'
-                ? 'Hoàn thành việc đầu tiên để thấy ở đây!'
+                ? t('complete_first_task')
                 : searchQuery
-                  ? 'Không tìm thấy kết quả phù hợp'
-                  : 'Thêm công việc mới để bắt đầu!'
+                  ? t('no_search_results')
+                  : t('add_task_to_start')
               }
             </p>
           </div>
@@ -174,10 +176,10 @@ function TaskStatusView() {
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
           <span>
-            Hiển thị {filteredTasks.length} / {tasks.length} công việc
+            {t('showing')} {filteredTasks.length} / {tasks.length} {t('tasks_count')}
           </span>
           <span>
-            {counts.pending} đang làm • {counts.completed} hoàn thành
+            {counts.pending} {t('in_progress_short')} • {counts.completed} {t('completed_short')}
           </span>
         </div>
       </div>

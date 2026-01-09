@@ -6,6 +6,7 @@ import {
   FiCheckCircle,
   FiClock,
   FiDownload,
+  FiUpload,
   FiPieChart,
   FiAlertTriangle,
   FiAlertCircle,
@@ -13,21 +14,31 @@ import {
   FiAward,
   FiZap,
   FiTarget,
-  FiStar
+  FiStar,
+  FiDatabase
 } from 'react-icons/fi';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, differenceInDays, eachDayOfInterval, eachWeekOfInterval, subWeeks, subMonths, isToday, isYesterday, startOfDay } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
+import { exportData, importData } from '../database/db';
 import useStore from '../store/useStore';
+import { useTranslation } from '../utils/i18n';
 
 function Statistics() {
-  const { tasks, categories, exportData, formatMoney, formatMoneyShort, currency } = useStore();
+  const { tasks, categories, formatMoney, formatMoneyShort, currency } = useStore();
+  const { t, language } = useTranslation();
   const [period, setPeriod] = useState('month');
   const [chartType, setChartType] = useState('total'); // total, completed, money
   const [hoveredPoint, setHoveredPoint] = useState(null); // For tooltip
+  const [exportLoading, setExportLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [customRange, setCustomRange] = useState({
     start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
   });
+
+  const dateLocale = language === 'vi' ? vi : enUS;
 
   // Calculate date range
   const dateRange = useMemo(() => {
@@ -54,14 +65,14 @@ function Statistics() {
     });
   }, [tasks, dateRange]);
 
-  // ============ CHART DATA - Biểu đồ đường ============
+  // ============ CHART DATA ============
   const chartData = useMemo(() => {
     const now = new Date();
     let intervals = [];
     let labelFormat = 'dd/MM';
+    let useWeekLabel = false;
 
     if (period === 'today') {
-      // Theo giờ trong ngày
       intervals = Array.from({ length: 24 }, (_, i) => {
         const date = new Date(now);
         date.setHours(i, 0, 0, 0);
@@ -69,23 +80,21 @@ function Statistics() {
       });
       labelFormat = 'HH:mm';
     } else if (period === 'week') {
-      // Theo ngày trong tuần
       intervals = eachDayOfInterval({ start: dateRange.start, end: dateRange.end }).map(date => ({
         start: new Date(date.setHours(0, 0, 0, 0)),
         end: new Date(new Date(date).setHours(23, 59, 59, 999))
       }));
       labelFormat = 'EEE';
     } else {
-      // Theo tuần trong tháng/custom
       const weeks = eachWeekOfInterval({ start: dateRange.start, end: dateRange.end }, { weekStartsOn: 1 });
       intervals = weeks.map((weekStart, i) => ({
         start: weekStart,
         end: i < weeks.length - 1 ? new Date(weeks[i + 1].getTime() - 1) : dateRange.end
       }));
-      labelFormat = "'Tuần' w";
+      useWeekLabel = true;
     }
 
-    return intervals.map(interval => {
+    return intervals.map((interval, index) => {
       const tasksInPeriod = tasks.filter(t => {
         const taskDate = new Date(t.createdAt);
         return taskDate >= interval.start && taskDate <= interval.end;
@@ -97,15 +106,23 @@ function Statistics() {
         return completedDate >= interval.start && completedDate <= interval.end;
       });
 
+      // Generate label
+      let label;
+      if (useWeekLabel) {
+        label = `${t('week_label')} ${index + 1}`;
+      } else {
+        label = format(interval.start, labelFormat, { locale: dateLocale });
+      }
+
       return {
-        label: format(interval.start, labelFormat, { locale: vi }),
+        label,
         total: tasksInPeriod.length,
         completed: completedInPeriod.length,
         money: tasksInPeriod.reduce((sum, t) => sum + (t.amount || 0), 0),
         pending: tasksInPeriod.filter(t => t.status !== 'completed').length
       };
     });
-  }, [tasks, dateRange, period]);
+  }, [tasks, dateRange, period, t, dateLocale]);
 
   // Calculate max value for chart scaling - round up to nearest 5
   const chartMax = useMemo(() => {
@@ -493,31 +510,94 @@ function Statistics() {
     return formatMoneyShort(amount);
   };
 
-  // Export functions
-  const handleExportJSON = () => {
-    const data = exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Export data to file (full backup with Tauri dialog)
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const data = exportData();
+      const jsonString = JSON.stringify(data, null, 2);
+
+      const filePath = await save({
+        defaultPath: `hubogo-backup-${new Date().toISOString().split('T')[0]}.json`,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+
+      if (filePath) {
+        await writeTextFile(filePath, jsonString);
+        const successMsg = language === 'vi'
+          ? `✅ ${t('export_success')}\n\nĐã lưu tại:\n${filePath}\n\nTổng: ${data.tasks.length} công việc, ${data.categories.length} danh mục`
+          : `✅ ${t('export_success')}\n\nSaved to:\n${filePath}\n\nTotal: ${data.tasks.length} tasks, ${data.categories.length} categories`;
+        alert(successMsg);
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert(`❌ ${t('export_failed')}: ${err.message}`);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
+  // Import data from file
+  const handleImport = async () => {
+    setImportLoading(true);
+    try {
+      const filePath = await open({
+        multiple: false,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+
+      if (filePath) {
+        const content = await readTextFile(filePath);
+        const data = JSON.parse(content);
+
+        // Validate data structure
+        if (!data.tasks || !data.categories) {
+          throw new Error(t('invalid_backup'));
+        }
+
+        const confirmMsg = language === 'vi'
+          ? `⚠️ ${t('import_warning')}\n\nFile backup chứa:\n• ${data.tasks.length} công việc\n• ${data.categories.length} danh mục\n\n${t('import_confirm')}`
+          : `⚠️ ${t('import_warning')}\n\nBackup file contains:\n• ${data.tasks.length} tasks\n• ${data.categories.length} categories\n\n${t('import_confirm')}`;
+
+        const confirmImport = confirm(confirmMsg);
+
+        if (confirmImport) {
+          importData(data);
+          alert(`✅ ${t('import_success')}\n\n${t('restart_required')}`);
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert(`❌ ${t('import_failed')}: ${err.message}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  // Export to CSV (quick stats export)
   const handleExportCSV = () => {
-    const headers = ['Tên', 'Danh mục', 'Mức độ ban đầu', 'Mức độ hiện tại', 'Tự động nâng cấp', 'Trạng thái', 'Số ngày', 'Số tiền', 'Đã thanh toán', 'Hạn chót', 'Ngày nhận', 'Ngày xong'];
+    const headers = language === 'vi'
+      ? ['Tên', 'Danh mục', 'Mức độ ban đầu', 'Mức độ hiện tại', 'Tự động nâng cấp', 'Trạng thái', 'Số ngày', 'Số tiền', 'Đã thanh toán', 'Hạn chót', 'Ngày nhận', 'Ngày xong']
+      : ['Name', 'Category', 'Original Priority', 'Current Priority', 'Auto Upgraded', 'Status', 'Days', 'Amount', 'Paid', 'Deadline', 'Created', 'Completed'];
     const rows = filteredTasks.map(task => {
       const cat = categories.find(c => c.id === task.categoryId);
       const daysToComplete = task.completedAt
         ? differenceInDays(new Date(task.completedAt), new Date(task.createdAt))
         : differenceInDays(new Date(), new Date(task.createdAt));
       return [
-        task.title, cat ? cat.name : 'Khác',
-        task.originalPriority === 'very-urgent' ? 'Rất gấp' : task.originalPriority === 'urgent' ? 'Gấp' : 'Bình thường',
-        task.priority === 'very-urgent' ? 'Rất gấp' : task.priority === 'urgent' ? 'Gấp' : 'Bình thường',
-        task.autoUpgraded ? 'Có' : 'Không', task.status === 'completed' ? 'Hoàn thành' : 'Đang làm',
-        daysToComplete, task.amount || 0, task.isPaid ? 'Đã' : 'Chưa',
+        task.title, cat ? cat.name : (language === 'vi' ? 'Khác' : 'Other'),
+        task.originalPriority === 'very-urgent' ? (language === 'vi' ? 'Rất gấp' : 'Very Urgent') : task.originalPriority === 'urgent' ? (language === 'vi' ? 'Gấp' : 'Urgent') : (language === 'vi' ? 'Bình thường' : 'Normal'),
+        task.priority === 'very-urgent' ? (language === 'vi' ? 'Rất gấp' : 'Very Urgent') : task.priority === 'urgent' ? (language === 'vi' ? 'Gấp' : 'Urgent') : (language === 'vi' ? 'Bình thường' : 'Normal'),
+        task.autoUpgraded ? (language === 'vi' ? 'Có' : 'Yes') : (language === 'vi' ? 'Không' : 'No'),
+        task.status === 'completed' ? (language === 'vi' ? 'Hoàn thành' : 'Completed') : (language === 'vi' ? 'Đang làm' : 'In Progress'),
+        daysToComplete, task.amount || 0, task.isPaid ? (language === 'vi' ? 'Đã' : 'Yes') : (language === 'vi' ? 'Chưa' : 'No'),
         task.deadline ? format(new Date(task.deadline), 'dd/MM/yyyy') : '',
         format(new Date(task.createdAt), 'dd/MM/yyyy HH:mm'),
         task.completedAt ? format(new Date(task.completedAt), 'dd/MM/yyyy HH:mm') : ''
@@ -530,7 +610,7 @@ function Statistics() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `thongke_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `${language === 'vi' ? 'thongke' : 'statistics'}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -545,24 +625,84 @@ function Statistics() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Thống kê</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('statistics')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {format(dateRange.start, 'dd/MM/yyyy', { locale: vi })} - {format(dateRange.end, 'dd/MM/yyyy', { locale: vi })}
+            {format(dateRange.start, 'dd/MM/yyyy', { locale: dateLocale })} - {format(dateRange.end, 'dd/MM/yyyy', { locale: dateLocale })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleExportCSV} className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg flex items-center gap-2 text-gray-700 dark:text-gray-300 transition-colors">
             <FiDownload size={16} /> CSV
           </button>
-          <button onClick={handleExportJSON} className="px-3 py-2 text-sm bg-primary-500 hover:bg-primary-600 rounded-lg flex items-center gap-2 text-white transition-colors">
-            <FiDownload size={16} /> Backup
+        </div>
+      </div>
+
+      {/* Data Backup Section */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 mb-6 border border-purple-200 dark:border-purple-800">
+        <div className="flex items-center gap-2 mb-3">
+          <FiDatabase className="text-purple-500" size={20} />
+          <span className="font-semibold text-gray-800 dark:text-white">{t('data_backup')}</span>
+        </div>
+
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+          {t('backup_description')}
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* Export button */}
+          <button
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="flex items-center justify-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl transition-colors group"
+          >
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FiDownload className="text-white" size={20} />
+            </div>
+            <div className="text-left">
+              <div className="font-medium text-gray-800 dark:text-white">
+                {exportLoading ? t('exporting') : t('export_data')}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {t('save_backup')}
+              </div>
+            </div>
           </button>
+
+          {/* Import button */}
+          <button
+            onClick={handleImport}
+            disabled={importLoading}
+            className="flex items-center justify-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl transition-colors group"
+          >
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FiUpload className="text-white" size={20} />
+            </div>
+            <div className="text-left">
+              <div className="font-medium text-gray-800 dark:text-white">
+                {importLoading ? t('importing') : t('import_data')}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {t('restore_backup')}
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            💡 <strong>{language === 'vi' ? 'Mẹo:' : 'Tip:'}</strong> {t('backup_tip')}
+          </p>
         </div>
       </div>
 
       {/* Period Selector */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {[{ id: 'today', label: 'Hôm nay' }, { id: 'week', label: 'Tuần này' }, { id: 'month', label: 'Tháng này' }, { id: 'custom', label: 'Tùy chọn' }].map(item => (
+        {[
+          { id: 'today', label: t('period_today') },
+          { id: 'week', label: t('period_week') },
+          { id: 'month', label: t('period_month') },
+          { id: 'custom', label: t('period_custom') }
+        ].map(item => (
           <button key={item.id} onClick={() => setPeriod(item.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${period === item.id ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
             {item.label}
@@ -576,21 +716,21 @@ function Statistics() {
           <FiCalendar className="text-gray-400" />
           <input type="date" value={customRange.start} onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
             className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white" />
-          <span className="text-gray-400">đến</span>
+          <span className="text-gray-400">{t('date_to')}</span>
           <input type="date" value={customRange.end} onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
             className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white" />
         </div>
       )}
 
-      {/* ============ LINE CHART - BIỂU ĐỒ ĐƯỜNG ============ */}
+      {/* ============ LINE CHART ============ */}
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <FiActivity className="text-primary-500" size={20} />
-            <span className="font-semibold text-gray-800 dark:text-white">Biểu đồ xu hướng</span>
+            <span className="font-semibold text-gray-800 dark:text-white">{t('trend_chart')}</span>
           </div>
           <div className="flex gap-1">
-            {[{ id: 'total', label: 'Tổng', color: 'blue' }, { id: 'completed', label: 'Xong', color: 'green' }, { id: 'money', label: 'Tiền', color: 'yellow' }].map(type => (
+            {[{ id: 'total', label: t('total'), color: 'blue' }, { id: 'completed', label: t('done'), color: 'green' }, { id: 'money', label: t('money'), color: 'yellow' }].map(type => (
               <button key={type.id} onClick={() => setChartType(type.id)}
                 className={`px-3 py-1 text-xs rounded-full transition-colors ${chartType === type.id
                   ? `bg-${type.color}-500 text-white`
@@ -706,9 +846,9 @@ function Statistics() {
                 // Generate tooltip text
                 const getTooltipText = () => {
                   if (chartType === 'total') {
-                    return `${value} Job`;
+                    return `${value} ${t('chart_jobs')}`;
                   } else if (chartType === 'completed') {
-                    return `${value} da xong`;
+                    return `${value} ${t('chart_done')}`;
                   } else {
                     return formatMoney(value);
                   }
@@ -782,7 +922,7 @@ function Statistics() {
               <FiPieChart className="text-white" size={16} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-blue-600 dark:text-blue-400 truncate">Tổng việc</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 truncate">{t('total_tasks_label')}</p>
               <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</p>
             </div>
           </div>
@@ -794,7 +934,7 @@ function Statistics() {
               <FiCheckCircle className="text-white" size={16} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-green-600 dark:text-green-400 truncate">Hoàn thành</p>
+              <p className="text-xs text-green-600 dark:text-green-400 truncate">{t('completed_label')}</p>
               <p className="text-xl font-bold text-green-700 dark:text-green-300">{stats.completed}</p>
             </div>
           </div>
@@ -806,7 +946,7 @@ function Statistics() {
               <FiClock className="text-white" size={16} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-orange-600 dark:text-orange-400 truncate">Đang làm</p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 truncate">{t('in_progress_label')}</p>
               <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{stats.pending}</p>
             </div>
           </div>
@@ -818,7 +958,7 @@ function Statistics() {
               <FiTrendingUp className="text-white" size={16} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-purple-600 dark:text-purple-400 truncate">Tỷ lệ</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 truncate">{t('rate_label')}</p>
               <p className="text-xl font-bold text-purple-700 dark:text-purple-300">{stats.completionRate}%</p>
             </div>
           </div>
@@ -830,13 +970,13 @@ function Statistics() {
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-4 mb-6 text-white">
           <div className="flex items-center gap-2 mb-4">
             <FiTrendingUp size={20} />
-            <span className="font-medium">Phân tích việc đã hoàn thành</span>
+            <span className="font-medium">{t('completed_analysis')}</span>
           </div>
 
           <div className="space-y-3 mb-4">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500"></span> Xong lúc bình thường</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500"></span> {t('done_normal')}</span>
                 <span>{deadlineStats.doneNormal} ({getDeadlinePercentage(deadlineStats.doneNormal)}%)</span>
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -845,7 +985,7 @@ function Statistics() {
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500"></span> Xong lúc gấp</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500"></span> {t('done_urgent')}</span>
                 <span>{deadlineStats.doneUrgent} ({getDeadlinePercentage(deadlineStats.doneUrgent)}%)</span>
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -854,7 +994,7 @@ function Statistics() {
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> Xong lúc rất gấp</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> {t('done_very_urgent')}</span>
                 <span>{deadlineStats.doneVeryUrgent} ({getDeadlinePercentage(deadlineStats.doneVeryUrgent)}%)</span>
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -866,11 +1006,11 @@ function Statistics() {
           <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-700">
             <div className="text-center">
               <p className="text-2xl font-bold text-yellow-400">{deadlineStats.avgDaysToComplete}</p>
-              <p className="text-xs text-gray-400">Ngày TB hoàn thành</p>
+              <p className="text-xs text-gray-400">{t('avg_days')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-red-400">{deadlineStats.autoUpgraded}</p>
-              <p className="text-xs text-gray-400">Việc bị nâng cấp</p>
+              <p className="text-xs text-gray-400">{t('upgraded_tasks')}</p>
             </div>
           </div>
         </div>
@@ -880,19 +1020,19 @@ function Statistics() {
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-4 mb-6 text-white">
         <div className="flex items-center gap-2 mb-3">
           <FiDollarSign size={20} />
-          <span className="font-medium">Tài chính</span>
+          <span className="font-medium">{t('finance')}</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-white/10 rounded-lg p-3">
-            <p className="text-primary-100 text-xs sm:text-sm">Tổng tiền</p>
+            <p className="text-primary-100 text-xs sm:text-sm">{t('total_money')}</p>
             <p className="text-lg sm:text-xl font-bold truncate">{formatMoney(stats.totalAmount)}</p>
           </div>
           <div className="bg-white/10 rounded-lg p-3">
-            <p className="text-primary-100 text-xs sm:text-sm">Đã nhận</p>
+            <p className="text-primary-100 text-xs sm:text-sm">{t('received')}</p>
             <p className="text-lg sm:text-xl font-bold text-green-300 truncate">{formatMoney(stats.paidAmount)}</p>
           </div>
           <div className="bg-white/10 rounded-lg p-3">
-            <p className="text-primary-100 text-xs sm:text-sm">Chưa nhận</p>
+            <p className="text-primary-100 text-xs sm:text-sm">{t('not_received')}</p>
             <p className="text-lg sm:text-xl font-bold text-yellow-300 truncate">{formatMoney(stats.unpaidAmount)}</p>
           </div>
         </div>
@@ -900,9 +1040,9 @@ function Statistics() {
 
       {/* Category Stats */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Theo danh mục</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{t('by_category')}</h2>
         {categoryStats.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có dữ liệu</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('no_data')}</p>
         ) : (
           <div className="space-y-3">
             {categoryStats.map(cat => (
@@ -912,14 +1052,14 @@ function Statistics() {
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
                     <span className="font-medium text-gray-800 dark:text-white">{cat.icon} {cat.name}</span>
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{cat.total} việc</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{cat.total} {t('tasks_label')}</span>
                 </div>
                 <div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
                   <div className="absolute left-0 top-0 h-full rounded-full transition-all" style={{ width: `${cat.completionRate}%`, backgroundColor: cat.color }} />
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">
-                    ✅ {cat.completed} xong • ⏳ {cat.pending} đang làm
+                    ✅ {cat.completed} {t('cat_done')} • ⏳ {cat.pending} {t('cat_in_progress')}
                     {cat.autoUpgraded > 0 && <span className="text-orange-500 ml-2">• ⬆️ {cat.autoUpgraded}</span>}
                   </span>
                   <span className="font-medium" style={{ color: cat.color }}>{cat.completionRate}%</span>

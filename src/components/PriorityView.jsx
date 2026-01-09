@@ -19,9 +19,11 @@ import {
   QUADRANTS,
   getWeights
 } from '../utils/priorityEngine';
+import { useTranslation } from '../utils/i18n';
 
 function PriorityView() {
   const { tasks, categories, currency, exchangeRate, getUncheckedLongTermTasks, dailyCheckin } = useStore();
+  const { t, language } = useTranslation();
 
   // Get today's stats
   const stats = useMemo(() => {
@@ -99,10 +101,10 @@ function PriorityView() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
             <FiTarget className="text-primary-500" />
-            Đánh giá & Ưu tiên
+            {t('priority_evaluation')}
           </h1>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
+            {new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>
         </div>
 
@@ -114,9 +116,9 @@ function PriorityView() {
                 <FiTarget size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-lg">🎯 Dự án dài hạn chờ điểm danh!</h3>
+                <h3 className="font-bold text-lg">🎯 {t('long_term_waiting')}</h3>
                 <p className="text-sm text-white/80">
-                  {uncheckedLongTermTasks.length} dự án chưa được điểm danh hôm nay
+                  {uncheckedLongTermTasks.length} {t('projects_unchecked')}
                 </p>
               </div>
             </div>
@@ -128,8 +130,8 @@ function PriorityView() {
                     <div>
                       <div className="font-medium">{task.title}</div>
                       <div className="text-xs text-white/70">
-                        Streak: {task.currentStreak || 0} ngày
-                        {task.longestStreak > 0 && ` • Kỷ lục: ${task.longestStreak}`}
+                        Streak: {task.currentStreak || 0} {t('streak_days')}
+                        {task.longestStreak > 0 && ` • ${t('streak_record')}: ${task.longestStreak}`}
                       </div>
                     </div>
                   </div>
@@ -138,14 +140,14 @@ function PriorityView() {
                     className="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 active:scale-95 transition-all flex items-center gap-1"
                   >
                     <FiZap size={14} />
-                    Điểm danh
+                    {t('checkin')}
                   </button>
                 </div>
               ))}
             </div>
             {uncheckedLongTermTasks.length > 3 && (
               <p className="text-xs text-white/60 mt-2 text-center">
-                +{uncheckedLongTermTasks.length - 3} dự án khác
+                +{uncheckedLongTermTasks.length - 3} {t('other_projects')}
               </p>
             )}
           </div>
@@ -154,44 +156,105 @@ function PriorityView() {
         {/* Banners - Motivational & Warnings */}
         {banners.length > 0 && (
           <div className="space-y-2">
-            {banners.map((banner, index) => (
-              <div
-                key={index}
-                className={`p-3 rounded-xl border ${getBannerStyles(banner.color)} flex items-center gap-3`}
-              >
-                <span className="text-2xl">{banner.icon}</span>
-                <div>
-                  <div className="font-semibold">{banner.title}</div>
-                  <div className="text-sm opacity-80">{banner.message}</div>
+            {banners.map((banner, index) => {
+              // Render translated banner content
+              const renderBannerContent = () => {
+                const data = banner.titleData || {};
+                switch (banner.type) {
+                  case 'celebration':
+                    return {
+                      title: `${t('banner_congrats_earned')} ${data.milestone}M ${t('banner_this_month')}`,
+                      message: `${t('banner_total_income')}: ${formatMoney(data.amount)} - ${t('banner_awesome')}`
+                    };
+                  case 'streak_amazing':
+                    return {
+                      title: `Streak ${data.days} ${t('banner_streak_amazing')}`,
+                      message: t('banner_building_habit')
+                    };
+                  case 'streak':
+                    return {
+                      title: `Streak ${data.days} ${t('banner_streak_days')}`,
+                      message: t('banner_keep_going')
+                    };
+                  case 'danger':
+                    return {
+                      title: `${data.count} ${t('banner_overdue')}`,
+                      message: t('banner_handle_now')
+                    };
+                  case 'urgent':
+                    return {
+                      title: `${data.count} ${t('banner_today_deadline')}`,
+                      message: t('banner_focus_finish')
+                    };
+                  case 'money':
+                    return {
+                      title: `${data.count} ${t('banner_unpaid')}`,
+                      message: `${t('banner_total')} ${formatMoney(data.amount)} - ${t('banner_collect_money')}`
+                    };
+                  case 'success':
+                    return {
+                      title: t('banner_excellent'),
+                      message: `${t('banner_rate_good')} ${data.rate}% - ${t('banner_doing_great')}`
+                    };
+                  case 'warning':
+                    return {
+                      title: t('banner_need_focus'),
+                      message: t('banner_many_incomplete')
+                    };
+                  default:
+                    return { title: '', message: '' };
+                }
+              };
+              const content = renderBannerContent();
+              return (
+                <div
+                  key={index}
+                  className={`p-3 rounded-xl border ${getBannerStyles(banner.color)} flex items-center gap-3`}
+                >
+                  <span className="text-2xl">{banner.icon}</span>
+                  <div>
+                    <div className="font-semibold">{content.title}</div>
+                    <div className="text-sm opacity-80">{content.message}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {/* ===== SMART ADVICE ===== */}
         {advice.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {advice.map((item, index) => (
-              <div
-                key={index}
-                className={`p-3 rounded-xl border-2 ${
-                  item.type === 'income' ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' :
-                  item.type === 'investment' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' :
-                  'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{item.icon}</span>
-                  <span className={`font-semibold text-sm ${
-                    item.type === 'income' ? 'text-green-700 dark:text-green-400' :
-                    item.type === 'investment' ? 'text-blue-700 dark:text-blue-400' :
-                    'text-purple-700 dark:text-purple-400'
-                  }`}>{item.title}</span>
+            {advice.map((item, index) => {
+              // Translate advice content
+              const title = t(item.titleKey);
+              let message = t(item.messageKey);
+              if (item.messageData) {
+                message = message
+                  .replace('{count}', item.messageData.count)
+                  .replace('{amount}', formatMoney(item.messageData.amount || 0));
+              }
+              return (
+                <div
+                  key={index}
+                  className={`p-3 rounded-xl border-2 ${
+                    item.type === 'income' ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' :
+                    item.type === 'investment' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' :
+                    'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">{item.icon}</span>
+                    <span className={`font-semibold text-sm ${
+                      item.type === 'income' ? 'text-green-700 dark:text-green-400' :
+                      item.type === 'investment' ? 'text-blue-700 dark:text-blue-400' :
+                      'text-purple-700 dark:text-purple-400'
+                    }`}>{title}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{message}</p>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{item.message}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -204,10 +267,10 @@ function PriorityView() {
               </div>
               <div>
                 <h2 className="font-bold text-green-700 dark:text-green-400 text-lg">
-                  💰 KIẾM TIỀN NUÔI GIA ĐÌNH
+                  💰 {t('income_family')}
                 </h2>
                 <p className="text-xs text-green-600 dark:text-green-500">
-                  Ưu tiên làm trước để có thu nhập • {tasksByType.income.urgent.length} việc gấp
+                  {t('priority_income_desc')} • {tasksByType.income.urgent.length} {t('urgent_tasks')}
                 </p>
               </div>
             </div>
@@ -222,14 +285,21 @@ function PriorityView() {
                         💵 {formatMoney(task.amount)}
                       </span>
                     )}
-                    {task.evaluation.reasons.slice(0, 2).map((reason, i) => (
-                      <span
-                        key={i}
-                        className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full"
-                      >
-                        {reason}
-                      </span>
-                    ))}
+                    {task.evaluation.reasons.slice(0, 2).map((reason, i) => {
+                      // Translate reason - reason is now an object with key, icon, data
+                      let text = reason.key ? t(reason.key) : reason;
+                      if (reason.data) {
+                        text = text.replace('{days}', reason.data.days);
+                      }
+                      return (
+                        <span
+                          key={i}
+                          className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full"
+                        >
+                          {reason.icon} {text}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -238,7 +308,7 @@ function PriorityView() {
             {tasksByType.income.important.length > 0 && (
               <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
                 <p className="text-xs text-green-600 dark:text-green-500 mb-2 font-medium">
-                  📋 Việc kiếm tiền quan trọng khác:
+                  📋 {t('other_income_tasks')}
                 </p>
                 <div className="space-y-1">
                   {tasksByType.income.important.map(task => (
@@ -266,10 +336,10 @@ function PriorityView() {
               </div>
               <div>
                 <h2 className="font-bold text-blue-700 dark:text-blue-400 text-lg">
-                  🚀 ĐẦU TƯ TƯƠNG LAI
+                  🚀 {t('invest_future')}
                 </h2>
                 <p className="text-xs text-blue-600 dark:text-blue-500">
-                  Dự án dài hạn, xây dựng giá trị • {tasksByType.investment.all.length} dự án
+                  {t('invest_desc')} • {tasksByType.investment.all.length} {t('projects')}
                 </p>
               </div>
             </div>
@@ -281,11 +351,11 @@ function PriorityView() {
                   <div className="mt-2 flex flex-wrap gap-1">
                     {task.isLongTerm && (
                       <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                        🎯 Streak: {task.currentStreak || 0} ngày
+                        🎯 Streak: {task.currentStreak || 0} {t('streak_days')}
                       </span>
                     )}
                     <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full">
-                      📅 {task.evaluation.quadrantInfo.name}
+                      📅 {t(task.evaluation.quadrantInfo.nameKey)}
                     </span>
                   </div>
                 </div>
@@ -294,7 +364,7 @@ function PriorityView() {
 
             <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/30 rounded-xl">
               <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">
-                💡 Gợi ý: Block 1-2 tiếng mỗi ngày cho dự án đầu tư. Dù không tạo tiền ngay, đây là nền tảng cho tương lai!
+                💡 {t('invest_tip')}
               </p>
             </div>
           </div>
@@ -309,10 +379,10 @@ function PriorityView() {
               </div>
               <div>
                 <h2 className={`font-bold ${getQuadrantStyles('Q3').text}`}>
-                  🔄 CÂN NHẮC ỦY QUYỀN
+                  🔄 {t('consider_delegate')}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Gấp nhưng không quan trọng - Làm nhanh hoặc nhờ người khác
+                  {t('delegate_desc')}
                 </p>
               </div>
             </div>
@@ -334,10 +404,10 @@ function PriorityView() {
               <FiCheckCircle className="text-green-500" size={32} />
             </div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-              Không có việc nào cần làm!
+              {t('no_tasks_todo')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              Bạn đã hoàn thành tất cả công việc. Nghỉ ngơi đi! 🎉
+              {t('all_done')}
             </p>
           </div>
         )}
@@ -346,13 +416,13 @@ function PriorityView() {
         <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 rounded-2xl p-4 border border-primary-100 dark:border-primary-800">
           <h3 className="font-semibold text-primary-700 dark:text-primary-400 mb-2 flex items-center gap-2">
             <FiZap size={16} />
-            Gợi ý làm việc hiệu quả
+            {t('work_tips')}
           </h3>
           <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-            <li>• <strong>Q1</strong> - Làm ngay, không trì hoãn</li>
-            <li>• <strong>Q2</strong> - Block lịch 90 phút để tập trung</li>
-            <li>• <strong>Q3</strong> - Làm nhanh hoặc nhờ người khác</li>
-            <li>• <strong>Q4</strong> - Loại bỏ hoặc làm khi rảnh</li>
+            <li>• <strong>Q1</strong> - {t('q1_tip')}</li>
+            <li>• <strong>Q2</strong> - {t('q2_tip')}</li>
+            <li>• <strong>Q3</strong> - {t('q3_tip')}</li>
+            <li>• <strong>Q4</strong> - {t('q4_tip')}</li>
           </ul>
         </div>
 
@@ -360,19 +430,19 @@ function PriorityView() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-primary-500">{stats.pending}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Đang làm</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('in_progress_stat')}</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Hoàn thành</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('completed_stat')}</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-blue-500">{stats.completionRate}%</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Tỷ lệ</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('rate_stat')}</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-amber-500">{formatMoney(stats.unpaidAmount)}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Chưa thu</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t('not_collected')}</div>
           </div>
         </div>
       </div>

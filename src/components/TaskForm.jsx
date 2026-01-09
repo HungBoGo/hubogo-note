@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiCalendar, FiDollarSign, FiClock } from 'react-icons/fi';
 import { format } from 'date-fns';
 import useStore from '../store/useStore';
+import { useTranslation } from '../utils/i18n';
 
 function TaskForm() {
   const { closeTaskForm, editingTask, addTask, updateTask, categories } = useStore();
+  const { t, language } = useTranslation();
 
   // Get current datetime in local format for input
   const getCurrentDateTime = () => {
@@ -60,13 +62,13 @@ function TaskForm() {
   const validate = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
-      newErrors.title = 'Vui lòng nhập tên công việc';
+      newErrors.title = t('task_name_required');
     }
     if (!formData.categoryId) {
-      newErrors.categoryId = 'Vui lòng chọn danh mục';
+      newErrors.categoryId = t('category_required');
     }
     if (!formData.receivedAt) {
-      newErrors.receivedAt = 'Vui lòng chọn ngày nhận việc';
+      newErrors.receivedAt = t('received_required');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -118,7 +120,7 @@ function TaskForm() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-            {editingTask ? 'Sửa công việc' : 'Thêm công việc mới'}
+            {editingTask ? t('edit_task') : t('add_new_task')}
           </h2>
           <button
             onClick={closeTaskForm}
@@ -133,14 +135,14 @@ function TaskForm() {
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tên công việc <span className="text-red-500">*</span>
+              {t('task_name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Nhập tên công việc..."
+              placeholder={t('task_name_placeholder')}
               className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 errors.title ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'
               }`}
@@ -153,13 +155,13 @@ function TaskForm() {
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Mô tả
+              {t('task_description')}
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Mô tả chi tiết công việc..."
+              placeholder={t('description_placeholder')}
               rows={2}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
@@ -168,7 +170,7 @@ function TaskForm() {
           {/* Task Type - Income vs Investment */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Loại công việc
+              {t('task_type')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -184,9 +186,9 @@ function TaskForm() {
                   <span className="text-xl">💰</span>
                   <div>
                     <div className={`font-medium ${formData.taskType === 'income' ? 'text-green-700 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                      Kiếm tiền
+                      {t('task_type_income')}
                     </div>
-                    <div className="text-xs text-gray-500">Nuôi gia đình</div>
+                    <div className="text-xs text-gray-500">{t('task_type_income_desc')}</div>
                   </div>
                 </div>
               </button>
@@ -203,9 +205,9 @@ function TaskForm() {
                   <span className="text-xl">🚀</span>
                   <div>
                     <div className={`font-medium ${formData.taskType === 'investment' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                      Đầu tư
+                      {t('task_type_invest')}
                     </div>
-                    <div className="text-xs text-gray-500">Tương lai</div>
+                    <div className="text-xs text-gray-500">{t('task_type_invest_desc')}</div>
                   </div>
                 </div>
               </button>
@@ -215,7 +217,7 @@ function TaskForm() {
           {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Danh mục <span className="text-red-500">*</span>
+              {t('category_label')} <span className="text-red-500">*</span>
             </label>
             <select
               name="categoryId"
@@ -225,7 +227,7 @@ function TaskForm() {
                 errors.categoryId ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'
               }`}
             >
-              <option value="">Chọn danh mục</option>
+              <option value="">{t('select_category')}</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
@@ -238,7 +240,7 @@ function TaskForm() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                ⭐ Quan trọng
+                ⭐ {t('importance_label')}
               </label>
               <select
                 name="importance"
@@ -246,16 +248,16 @@ function TaskForm() {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value={0}>⚪ Không quan trọng</option>
-                <option value={1}>🔵 Bình thường</option>
-                <option value={2}>🟡 Quan trọng</option>
-                <option value={3}>⭐ Rất quan trọng</option>
+                <option value={0}>⚪ {t('importance_0')}</option>
+                <option value={1}>🔵 {t('importance_1')}</option>
+                <option value={2}>🟡 {t('importance_2')}</option>
+                <option value={3}>⭐ {t('importance_3')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                ⏰ Độ gấp
+                ⏰ {t('urgency_label')}
               </label>
               <select
                 name="priority"
@@ -263,9 +265,9 @@ function TaskForm() {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="normal">🔵 Bình thường</option>
-                <option value="urgent">🟠 Gấp</option>
-                <option value="very-urgent">🔴 Rất gấp</option>
+                <option value="normal">🔵 {t('urgency_normal')}</option>
+                <option value="urgent">🟠 {t('urgency_urgent')}</option>
+                <option value="very-urgent">🔴 {t('urgency_very_urgent')}</option>
               </select>
             </div>
           </div>
@@ -273,7 +275,7 @@ function TaskForm() {
           {/* Ngày giờ nhận việc */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              📅 Ngày giờ nhận việc <span className="text-red-500">*</span>
+              📅 {t('received_date')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FiClock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -296,7 +298,7 @@ function TaskForm() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                💰 Số tiền (VNĐ)
+                💰 {t('amount_vnd')}
               </label>
               <div className="relative">
                 <FiDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -313,7 +315,7 @@ function TaskForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                ⏰ Hạn chót
+                ⏰ {t('deadline_label')}
               </label>
               <div className="relative">
                 <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -332,10 +334,10 @@ function TaskForm() {
           <div className="flex items-center justify-between py-2 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
             <div>
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                🎯 Dự án dài hạn
+                🎯 {t('long_term_project')}
               </span>
               <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5">
-                Điểm danh hàng ngày, theo dõi streak
+                {t('long_term_desc')}
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -353,7 +355,7 @@ function TaskForm() {
           {/* Reminder Toggle */}
           <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              🔔 Bật nhắc nhở deadline
+              🔔 {t('reminder_toggle')}
             </span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -374,13 +376,13 @@ function TaskForm() {
               onClick={closeTaskForm}
               className="flex-1 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
-              Hủy
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
             >
-              {editingTask ? 'Cập nhật' : 'Thêm mới'}
+              {editingTask ? t('update') : t('add_new')}
             </button>
           </div>
         </form>

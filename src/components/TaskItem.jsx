@@ -5,16 +5,19 @@ import {
   FiTarget, FiZap
 } from 'react-icons/fi';
 import { format, formatDistanceToNow, isPast, isToday, differenceInDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
 import useStore from '../store/useStore';
+import { useTranslation } from '../utils/i18n';
 
 function TaskItem({ task, compact = false, showQuadrant = false }) {
   const { toggleTaskComplete, toggleTaskPaid, updateTask, deleteTask, openTaskForm, categories, formatMoney, dailyCheckin, hasCheckedInToday } = useStore();
+  const { t, language } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const itemRef = useRef(null);
   const category = categories.find(c => c.id === task.categoryId);
   const daysReceived = differenceInDays(new Date(), new Date(task.createdAt));
   const [isNeonActive, setIsNeonActive] = useState(false);
+  const dateLocale = language === 'vi' ? vi : enUS;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -42,16 +45,16 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
   }, [daysReceived, task.status]);
 
   const pc = {
-    'very-urgent': { label: 'Rất gấp', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', border: 'border-l-red-500', icon: FiAlertCircle, dot: 'bg-red-500' },
-    'urgent': { label: 'Gấp', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', border: 'border-l-orange-500', icon: FiAlertTriangle, dot: 'bg-orange-500' },
-    'normal': { label: 'Bình thường', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', border: 'border-l-blue-500', icon: null, dot: 'bg-blue-500' }
+    'very-urgent': { label: t('priority_very_urgent'), color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', border: 'border-l-red-500', icon: FiAlertCircle, dot: 'bg-red-500' },
+    'urgent': { label: t('priority_urgent'), color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', border: 'border-l-orange-500', icon: FiAlertTriangle, dot: 'bg-orange-500' },
+    'normal': { label: t('priority_normal'), color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', border: 'border-l-blue-500', icon: null, dot: 'bg-blue-500' }
   };
   const priority = pc[task.priority] || pc.normal;
   const isOverdue = task.deadline && isPast(new Date(task.deadline)) && task.status !== 'completed';
   const isDueToday = task.deadline && isToday(new Date(task.deadline));
 
   const handleToggleReminder = (e) => { e.stopPropagation(); updateTask(task.id, { reminderEnabled: !task.reminderEnabled }); };
-  const handleDelete = (e) => { e.stopPropagation(); if (window.confirm('Bạn có chắc muốn xóa?')) deleteTask(task.id); };
+  const handleDelete = (e) => { e.stopPropagation(); if (window.confirm(t('delete_task_confirm'))) deleteTask(task.id); };
   const handleEdit = (e) => { e.stopPropagation(); openTaskForm(task); };
   const handleToggleComplete = (e) => { e.stopPropagation(); toggleTaskComplete(task.id); };
   const handleTogglePaid = (e) => { e.stopPropagation(); toggleTaskPaid(task.id); };
@@ -59,11 +62,27 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
 
   // Check if already checked in today
   const checkedInToday = task.isLongTerm && hasCheckedInToday(task.id);
+
+  // Compact relative time format
+  const getCompactRelativeTime = (date) => {
+    const now = new Date();
+    const diff = date - now;
+    const diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.round(diffDays / 30);
+
+    if (diffDays <= 0) return t('overdue');
+    if (diffDays === 1) return language === 'vi' ? '1 ngày' : '1 day';
+    if (diffDays <= 7) return language === 'vi' ? `${diffDays} ngày` : `${diffDays}d`;
+    if (diffDays <= 30) return language === 'vi' ? `${Math.ceil(diffDays / 7)} tuần` : `${Math.ceil(diffDays / 7)}w`;
+    if (diffMonths <= 12) return language === 'vi' ? `${diffMonths} tháng` : `${diffMonths}mo`;
+    return language === 'vi' ? `${Math.round(diffMonths / 12)} năm` : `${Math.round(diffMonths / 12)}y`;
+  };
+
   const getDeadlineText = () => {
     if (!task.deadline) return null;
-    if (isOverdue) return 'Quá hạn';
-    if (isDueToday) return 'Hôm nay';
-    return formatDistanceToNow(new Date(task.deadline), { addSuffix: true, locale: vi });
+    if (isOverdue) return t('overdue');
+    if (isDueToday) return t('today');
+    return getCompactRelativeTime(new Date(task.deadline));
   };
   const PIcon = priority.icon;
 
@@ -108,12 +127,12 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
         </div>
         <div className="flex items-center gap-2">
           {task.isLongTerm && !checkedInToday && (
-            <button onClick={handleCheckin} className="p-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-white" title="Điểm danh">
+            <button onClick={handleCheckin} className="p-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-white" title={t('checkin')}>
               <FiZap size={14}/>
             </button>
           )}
           {task.isLongTerm && checkedInToday && (
-            <span className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600" title="Đã điểm danh">
+            <span className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600" title={t('checked_in_today')}>
               <FiCheck size={14}/>
             </span>
           )}
@@ -147,15 +166,15 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
           <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
             {category && <span className="px-2 py-1 rounded-full" style={{backgroundColor: category.color + '20', color: category.color}}>{category.icon} {category.name}</span>}
             {task.amount > 0 && <button onClick={handleTogglePaid} className={`flex items-center gap-1 px-2 py-1 rounded-full ${task.isPaid ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}><FiDollarSign size={12}/>{formatMoney(task.amount)}{task.isPaid && <FiCheck size={10}/>}</button>}
-            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${priority.color}`}>{task.autoUpgraded && <span title="Tự động nâng cấp">⬆️</span>}{PIcon && <PIcon size={10}/>}{priority.label}</span>
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${priority.color}`}>{task.autoUpgraded && <span title={t('auto_upgraded')}>⬆️</span>}{PIcon && <PIcon size={10}/>}{priority.label}</span>
             <button onClick={handleToggleReminder} className={`p-1 rounded ${task.reminderEnabled ? 'text-primary-500' : 'text-gray-400'}`}>{task.reminderEnabled ? <FiBell size={14}/> : <FiBellOff size={14}/>}</button>
           </div>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
-            <span className="flex items-center gap-1"><FiCalendar size={12}/>Nhận: {format(new Date(task.createdAt), 'dd/MM/yyyy HH:mm', {locale: vi})}</span>
-            {task.deadline && <span className="flex items-center gap-1"><FiClock size={12}/>Hạn: {format(new Date(task.deadline), 'dd/MM/yyyy HH:mm', {locale: vi})}</span>}
-            {task.status === 'completed' && task.completedAt && <span className="flex items-center gap-1 text-green-600 dark:text-green-400"><FiCheck size={12}/>Xong: {format(new Date(task.completedAt), 'dd/MM/yyyy HH:mm', {locale: vi})}</span>}
+            <span className="flex items-center gap-1"><FiCalendar size={12}/>{t('received_label')}: {format(new Date(task.createdAt), 'dd/MM/yy HH:mm', {locale: dateLocale})}</span>
+            {task.deadline && <span className="flex items-center gap-1"><FiClock size={12}/>{t('deadline_at')}: {format(new Date(task.deadline), 'dd/MM/yy HH:mm', {locale: dateLocale})}</span>}
+            {task.status === 'completed' && task.completedAt && <span className="flex items-center gap-1 text-green-600 dark:text-green-400"><FiCheck size={12}/>{t('done_at')}: {format(new Date(task.completedAt), 'dd/MM/yy HH:mm', {locale: dateLocale})}</span>}
           </div>
-          {task.status !== 'completed' && daysReceived > 0 && <div className="mt-2"><span className={`inline-flex items-center text-xs px-2 py-1 rounded-full font-medium ${daysReceived >= 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : daysReceived >= 3 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>⏱️ {daysReceived} ngày chưa xong</span></div>}
+          {task.status !== 'completed' && daysReceived > 0 && <div className="mt-2"><span className={`inline-flex items-center text-xs px-2 py-1 rounded-full font-medium ${daysReceived >= 5 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : daysReceived >= 3 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>⏱️ {daysReceived} {t('days_not_done')}</span></div>}
 
           {/* Long-term project streak info */}
           {task.isLongTerm && (
@@ -163,16 +182,16 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FiTarget className="text-blue-500" size={14} />
-                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Dự án dài hạn</span>
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{t('long_term_project')}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
                     <FiZap size={12} />
-                    {task.currentStreak || 0} ngày liên tục
+                    {task.currentStreak || 0} {t('streak_days')}
                   </span>
                   {task.longestStreak > 0 && (
                     <span className="text-gray-500 dark:text-gray-400">
-                      Kỷ lục: {task.longestStreak}
+                      {t('streak_record')}: {task.longestStreak}
                     </span>
                   )}
                 </div>
@@ -187,17 +206,17 @@ function TaskItem({ task, compact = false, showQuadrant = false }) {
                 }`}
               >
                 {checkedInToday ? (
-                  <><FiCheck size={14} /> Đã điểm danh hôm nay!</>
+                  <><FiCheck size={14} /> {t('checked_in_today')}</>
                 ) : (
-                  <><FiZap size={14} /> Điểm danh hôm nay</>
+                  <><FiZap size={14} /> {t('checkin_today')}</>
                 )}
               </button>
             </div>
           )}
 
           <div className="flex gap-2 mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-            <button onClick={handleEdit} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-600 dark:text-gray-300"><FiEdit2 size={12}/>Sửa</button>
-            <button onClick={handleDelete} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg text-red-600 dark:text-red-400"><FiTrash2 size={12}/>Xóa</button>
+            <button onClick={handleEdit} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-600 dark:text-gray-300"><FiEdit2 size={12}/>{t('edit')}</button>
+            <button onClick={handleDelete} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg text-red-600 dark:text-red-400"><FiTrash2 size={12}/>{t('delete')}</button>
           </div>
         </div>
       )}

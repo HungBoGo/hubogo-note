@@ -11,9 +11,13 @@ import {
   FiChevronUp,
   FiChevronLeft,
   FiChevronRight,
-  FiInfo
+  FiInfo,
+  FiGlobe,
+  FiPower
 } from 'react-icons/fi';
+import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
 import useStore from '../store/useStore';
+import { useTranslation } from '../utils/i18n';
 
 function Sidebar() {
   const {
@@ -33,14 +37,54 @@ function Sidebar() {
     fetchExchangeRate
   } = useStore();
 
+  const { t, language, toggleLanguage } = useTranslation();
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
+  const [autostartEnabled, setAutostartEnabled] = useState(false);
+  const [autostartLoading, setAutostartLoading] = useState(true);
 
   // Fetch exchange rate on mount
   useEffect(() => {
     fetchExchangeRate();
   }, []);
+
+  // Check autostart status on mount
+  useEffect(() => {
+    const checkAutostart = async () => {
+      try {
+        const enabled = await isEnabled();
+        setAutostartEnabled(enabled);
+      } catch (err) {
+        console.error('Failed to check autostart status:', err);
+      } finally {
+        setAutostartLoading(false);
+      }
+    };
+    checkAutostart();
+  }, []);
+
+  // Toggle autostart
+  const handleToggleAutostart = async () => {
+    setAutostartLoading(true);
+    try {
+      if (autostartEnabled) {
+        await disable();
+        setAutostartEnabled(false);
+      } else {
+        await enable();
+        setAutostartEnabled(true);
+      }
+    } catch (err) {
+      console.error('Failed to toggle autostart:', err);
+      const errMsg = language === 'vi'
+        ? 'Không thể thay đổi cài đặt khởi động. Vui lòng thử lại.'
+        : 'Cannot change startup settings. Please try again.';
+      alert(errMsg);
+    } finally {
+      setAutostartLoading(false);
+    }
+  };
 
   // Count tasks
   const allTasksCount = tasks.length;
@@ -48,11 +92,11 @@ function Sidebar() {
   const pendingCount = tasks.filter(t => t.status !== 'completed').length;
 
   const menuItems = [
-    { id: 'calendar', icon: FiCalendar, label: 'Lịch', count: allTasksCount, color: 'bg-blue-500' },
-    { id: 'priority', icon: FiTarget, label: 'Ưu tiên', count: pendingCount, color: 'bg-red-500' },
-    { id: 'status', icon: FiList, label: 'Trạng thái', count: allTasksCount, color: 'bg-orange-500' },
-    { id: 'statistics', icon: FiBarChart2, label: 'Thống kê', count: null, color: 'bg-purple-500' },
-    { id: 'about', icon: FiInfo, label: 'Thông tin', count: null, color: 'bg-gray-500' },
+    { id: 'calendar', icon: FiCalendar, label: language === 'vi' ? 'Lịch' : 'Calendar', tooltip: t('menu_calendar'), count: allTasksCount, color: 'bg-blue-500' },
+    { id: 'priority', icon: FiTarget, label: language === 'vi' ? 'Ưu tiên' : 'Priority', tooltip: t('menu_priority'), count: pendingCount, color: 'bg-red-500' },
+    { id: 'status', icon: FiList, label: language === 'vi' ? 'Trạng thái' : 'Status', tooltip: t('menu_status'), count: allTasksCount, color: 'bg-orange-500' },
+    { id: 'statistics', icon: FiBarChart2, label: language === 'vi' ? 'Thống kê' : 'Statistics', tooltip: t('menu_statistics'), count: null, color: 'bg-purple-500' },
+    { id: 'about', icon: FiInfo, label: language === 'vi' ? 'Thông tin' : 'About', tooltip: t('menu_about'), count: null, color: 'bg-gray-500' },
   ];
 
   // Get selected category name
@@ -64,40 +108,17 @@ function Sidebar() {
       <div className="lg:hidden bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 relative z-40">
         {/* Collapsible content */}
         <div className={`transition-all duration-300 ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
-          {/* Row 1: Search + Currency Toggle */}
+          {/* Row 1: Search */}
           <div className="flex items-center gap-2 p-2">
             <div className="flex-1 relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
               <input
                 type="text"
-                placeholder="Tìm kiếm..."
+                placeholder={t('search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-            </div>
-            {/* Currency Toggle */}
-            <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5 flex-shrink-0">
-              <button
-                onClick={() => setCurrency('VND')}
-                className={`px-2 py-1.5 text-xs font-bold rounded-md transition-all ${
-                  currency === 'VND'
-                    ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                đ
-              </button>
-              <button
-                onClick={() => setCurrency('USD')}
-                className={`px-2 py-1.5 text-xs font-bold rounded-md transition-all ${
-                  currency === 'USD'
-                    ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                $
-              </button>
             </div>
           </div>
 
@@ -107,6 +128,7 @@ function Sidebar() {
               <button
                 key={item.id}
                 onClick={() => setSelectedView(item.id)}
+                title={item.tooltip}
                 className={`flex-1 flex flex-col items-center py-1 rounded-lg transition-all min-w-0 ${
                   selectedView === item.id && !selectedCategory
                     ? 'bg-white dark:bg-gray-700 shadow-sm'
@@ -125,7 +147,82 @@ function Sidebar() {
             ))}
           </div>
 
-          {/* Row 3: Category dropdown - full width */}
+          {/* Row 3: Compact Settings Row for Mobile */}
+          <div className="px-2 pb-2">
+            <div className="flex items-center gap-2">
+              {/* Autostart Toggle - Switch Style */}
+              <button
+                onClick={handleToggleAutostart}
+                disabled={autostartLoading}
+                title={language === 'vi' ? 'Khởi động cùng Windows' : 'Start with Windows'}
+                className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                  autostartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                } bg-gray-200 dark:bg-gray-700`}
+              >
+                <FiPower size={12} className={autostartEnabled ? 'text-green-500' : 'text-gray-400'} />
+                <span className="text-gray-600 dark:text-gray-300">
+                  {language === 'vi' ? 'Auto' : 'Auto'}
+                </span>
+                <div className={`relative w-8 h-4 rounded-full transition-colors ${
+                  autostartEnabled ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-500'
+                }`}>
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all ${
+                    autostartEnabled ? 'left-4' : 'left-0.5'
+                  }`} />
+                </div>
+              </button>
+
+              {/* Language Toggle */}
+              <div className="flex-1 flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5">
+                <button
+                  onClick={() => language !== 'vi' && toggleLanguage()}
+                  className={`flex-1 py-1 text-xs font-medium rounded-md transition-all ${
+                    language === 'vi'
+                      ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  VI
+                </button>
+                <button
+                  onClick={() => language !== 'en' && toggleLanguage()}
+                  className={`flex-1 py-1 text-xs font-medium rounded-md transition-all ${
+                    language === 'en'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
+              {/* Currency Toggle */}
+              <div className="flex-1 flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5">
+                <button
+                  onClick={() => setCurrency('VND')}
+                  className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                    currency === 'VND'
+                      ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  đ
+                </button>
+                <button
+                  onClick={() => setCurrency('USD')}
+                  className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                    currency === 'USD'
+                      ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  $
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 4: Category dropdown - full width */}
           <div className="px-2 pb-2 relative z-50">
             {/* Category Dropdown */}
             <div className="relative" style={{ zIndex: 100 }}>
@@ -145,7 +242,7 @@ function Sidebar() {
                       </span>
                     </>
                   ) : (
-                    <span className="text-gray-500 truncate">Danh mục</span>
+                    <span className="text-gray-500 truncate">{t('category')}</span>
                   )}
                 </div>
                 <FiChevronDown size={14} className={`text-gray-400 transition-transform flex-shrink-0 ${showCategoryDropdown ? 'rotate-180' : ''}`} />
@@ -161,7 +258,7 @@ function Sidebar() {
                     }}
                     className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                   >
-                    Tất cả danh mục
+                    {t('all_categories_dropdown')}
                   </button>
                   {categories.map(category => {
                     const categoryTaskCount = tasks.filter(t => t.categoryId === category.id).length;
@@ -194,7 +291,7 @@ function Sidebar() {
                     }}
                     className="w-full px-3 py-2 text-left text-sm text-primary-500 hover:bg-gray-100 dark:hover:bg-gray-600 border-t border-gray-200 dark:border-gray-600"
                   >
-                    <FiPlus className="inline mr-1" size={12} /> Thêm danh mục
+                    <FiPlus className="inline mr-1" size={12} /> {t('add_category')}
                   </button>
                 </div>
               )}
@@ -234,7 +331,7 @@ function Sidebar() {
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Tìm kiếm..."
+                placeholder={t('search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -256,7 +353,7 @@ function Sidebar() {
                   ? 'bg-white dark:bg-gray-700 shadow-md'
                   : 'hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
-              title={isDesktopCollapsed ? item.label : ''}
+              title={item.tooltip}
             >
               <div className={`${item.color} rounded-lg flex items-center justify-center relative ${isDesktopCollapsed ? 'w-8 h-8' : 'w-8 h-8'}`}>
                 <item.icon className="text-white" size={16} />
@@ -288,12 +385,12 @@ function Sidebar() {
             <div className="px-3 py-2 mt-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Danh mục
+                  {t('categories')}
                 </span>
                 <button
                   onClick={() => openCategoryForm()}
                   className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  title="Thêm danh mục"
+                  title={t('add_category')}
                 >
                   <FiPlus size={14} />
                 </button>
@@ -333,41 +430,116 @@ function Sidebar() {
               })}
             </div>
 
-            {/* Currency Selector */}
+            {/* Compact Settings Row: Autostart | Language | Currency */}
             <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                  <FiDollarSign size={12} />
-                  Tiền tệ
-                </span>
-                <span className="text-xs text-gray-400">
-                  1$ = {exchangeRate.toLocaleString()}đ
-                </span>
-              </div>
-              <div className="flex gap-1 p-1 bg-gray-200 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2">
+                {/* Autostart Toggle - Switch Style */}
                 <button
-                  onClick={() => setCurrency('VND')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    currency === 'VND'
-                      ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
+                  onClick={handleToggleAutostart}
+                  disabled={autostartLoading}
+                  title={language === 'vi' ? 'Khởi động cùng Windows' : 'Start with Windows'}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                    autostartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                  } bg-gray-200 dark:bg-gray-700`}
                 >
-                  VND
+                  <FiPower size={12} className={autostartEnabled ? 'text-green-500' : 'text-gray-400'} />
+                  <span className="text-gray-600 dark:text-gray-300">Auto</span>
+                  <div className={`relative w-8 h-4 rounded-full transition-colors ${
+                    autostartEnabled ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-500'
+                  }`}>
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all ${
+                      autostartEnabled ? 'left-4' : 'left-0.5'
+                    }`} />
+                  </div>
                 </button>
-                <button
-                  onClick={() => setCurrency('USD')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    currency === 'USD'
-                      ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                >
-                  USD
-                </button>
+
+                {/* Language Toggle */}
+                <div className="flex-1 flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5">
+                  <button
+                    onClick={() => language !== 'vi' && toggleLanguage()}
+                    className={`flex-1 py-1 text-xs font-medium rounded-md transition-all ${
+                      language === 'vi'
+                        ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    VI
+                  </button>
+                  <button
+                    onClick={() => language !== 'en' && toggleLanguage()}
+                    className={`flex-1 py-1 text-xs font-medium rounded-md transition-all ${
+                      language === 'en'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+
+                {/* Currency Toggle */}
+                <div className="flex-1 flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setCurrency('VND')}
+                    className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                      currency === 'VND'
+                        ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    đ
+                  </button>
+                  <button
+                    onClick={() => setCurrency('USD')}
+                    className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                      currency === 'USD'
+                        ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    $
+                  </button>
+                </div>
               </div>
             </div>
           </>
+        )}
+
+        {/* Compact Settings for collapsed mode */}
+        {isDesktopCollapsed && (
+          <div className="px-2 py-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            {/* Autostart */}
+            <button
+              onClick={handleToggleAutostart}
+              disabled={autostartLoading}
+              title={language === 'vi'
+                ? (autostartEnabled ? 'Khởi động cùng Windows: BẬT' : 'Khởi động cùng Windows: TẮT')
+                : (autostartEnabled ? 'Start with Windows: ON' : 'Start with Windows: OFF')}
+              className={`w-full flex items-center justify-center p-2 rounded-lg transition-all ${
+                autostartEnabled
+                  ? 'bg-green-100 dark:bg-green-900/30'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              } ${autostartLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+            >
+              <FiPower size={16} className={autostartEnabled ? 'text-green-500' : 'text-gray-400'} />
+            </button>
+            {/* Language */}
+            <button
+              onClick={toggleLanguage}
+              title={language === 'vi' ? 'English' : 'Tiếng Việt'}
+              className="w-full flex items-center justify-center p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80 transition-all"
+            >
+              {language === 'vi' ? '🇻🇳' : '🇺🇸'}
+            </button>
+            {/* Currency */}
+            <button
+              onClick={() => setCurrency(currency === 'VND' ? 'USD' : 'VND')}
+              title={currency === 'VND' ? 'USD' : 'VND'}
+              className="w-full flex items-center justify-center p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80 transition-all text-xs font-bold"
+            >
+              {currency === 'VND' ? 'đ' : '$'}
+            </button>
+          </div>
         )}
 
         {/* Add Task Button */}
@@ -377,10 +549,10 @@ function Sidebar() {
             className={`bg-primary-500 hover:bg-primary-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors font-medium ${
               isDesktopCollapsed ? 'w-10 h-10' : 'w-full py-2.5'
             }`}
-            title={isDesktopCollapsed ? 'Thêm công việc' : ''}
+            title={isDesktopCollapsed ? (language === 'vi' ? 'Thêm công việc' : 'Add Task') : ''}
           >
             <FiPlus size={18} />
-            {!isDesktopCollapsed && 'Thêm công việc'}
+            {!isDesktopCollapsed && (language === 'vi' ? 'Thêm công việc' : 'Add Task')}
           </button>
         </div>
       </div>

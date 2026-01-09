@@ -4,14 +4,17 @@ import {
   FiCalendar, FiAlertCircle, FiAlertTriangle, FiPlus, FiSquare, FiCheckSquare
 } from 'react-icons/fi';
 import { format, formatDistanceToNow, isPast, isToday, differenceInDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
 import useStore from '../store/useStore';
+import { useTranslation } from '../utils/i18n';
 
 function TaskDetailModal({ task: initialTask, onClose }) {
   const {
     toggleTaskComplete, toggleTaskPaid, updateTask, deleteTask,
     openTaskForm, categories, formatMoney, tasks
   } = useStore();
+  const { t, language } = useTranslation();
+  const dateLocale = language === 'vi' ? vi : enUS;
 
   // Get fresh task data from store (to sync after updates)
   const task = tasks.find(t => t.id === initialTask.id) || initialTask;
@@ -63,9 +66,9 @@ function TaskDetailModal({ task: initialTask, onClose }) {
 
   // Priority config
   const pc = {
-    'very-urgent': { label: 'Rất gấp', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: FiAlertCircle },
-    'urgent': { label: 'Gấp', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: FiAlertTriangle },
-    'normal': { label: 'Bình thường', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: null }
+    'very-urgent': { label: t('priority_very_urgent'), color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: FiAlertCircle },
+    'urgent': { label: t('priority_urgent'), color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: FiAlertTriangle },
+    'normal': { label: t('priority_normal'), color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: null }
   };
   const priority = pc[task.priority] || pc.normal;
   const PIcon = priority.icon;
@@ -122,7 +125,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
   const checkProgress = totalChecks > 0 ? Math.round((completedChecks / totalChecks) * 100) : 0;
 
   const handleDelete = () => {
-    if (window.confirm('Bạn có chắc muốn xóa công việc này?')) {
+    if (window.confirm(t('delete_task_confirm_msg'))) {
       deleteTask(task.id);
       onClose();
     }
@@ -154,7 +157,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
       id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
       amount: amount,
       date: new Date().toISOString(),
-      note: newPaymentNote.trim() || `Đợt ${payments.length + 1}`
+      note: newPaymentNote.trim() || (language === 'vi' ? `Đợt ${payments.length + 1}` : `Payment ${payments.length + 1}`)
     };
     const updated = [...payments, newPayment];
     setPayments(updated);
@@ -206,7 +209,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                 </span>
               )}
               <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${priority.color}`}>
-                {task.autoUpgraded && <span title="Tự động nâng cấp">⬆️</span>}
+                {task.autoUpgraded && <span title={t('auto_upgraded')}>⬆️</span>}
                 {PIcon && <PIcon size={10} />}
                 {priority.label}
               </span>
@@ -236,20 +239,20 @@ function TaskDetailModal({ task: initialTask, onClose }) {
           <div className="flex flex-wrap gap-3 text-xs">
             <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <FiCalendar size={12} />
-              Nhận: {format(new Date(task.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+              {t('received_label')}: {format(new Date(task.createdAt), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}
             </span>
             {task.deadline && (
               <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 dark:text-red-400' : isDueToday ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>
                 <FiClock size={12} />
-                Hạn: {format(new Date(task.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })}
-                {isOverdue && ' (Quá hạn)'}
-                {isDueToday && !isOverdue && ' (Hôm nay)'}
+                {t('deadline_at')}: {format(new Date(task.deadline), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}
+                {isOverdue && ` (${t('overdue')})`}
+                {isDueToday && !isOverdue && ` (${t('due_today_label')})`}
               </span>
             )}
             {task.status === 'completed' && task.completedAt && (
               <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                 <FiCheck size={12} />
-                Xong: {format(new Date(task.completedAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                {t('done_at')}: {format(new Date(task.completedAt), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}
               </span>
             )}
           </div>
@@ -261,7 +264,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
               daysReceived >= 3 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
               'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
             }`}>
-              ⏱️ {daysReceived} ngày chưa xong
+              ⏱️ {daysReceived} {t('days_not_done')}
             </div>
           )}
 
@@ -281,15 +284,15 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                 }`}>
-                  {task.isPaid ? '✓ Đã thanh toán đủ' : 'Chưa thanh toán đủ'}
+                  {task.isPaid ? `✓ ${t('paid_full')}` : t('not_paid_full')}
                 </span>
               </div>
 
               {/* Payment progress bar */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>Đã nhận: <span className="text-green-600 dark:text-green-400 font-medium">{formatMoney(totalPaid)}</span></span>
-                  <span>Còn lại: <span className={remainingAmount > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-green-600 dark:text-green-400 font-medium'}>{formatMoney(remainingAmount)}</span></span>
+                  <span>{t('received_amount')}: <span className="text-green-600 dark:text-green-400 font-medium">{formatMoney(totalPaid)}</span></span>
+                  <span>{t('remaining_amount')}: <span className={remainingAmount > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-green-600 dark:text-green-400 font-medium'}>{formatMoney(remainingAmount)}</span></span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
@@ -304,7 +307,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
               {/* Payment history */}
               {payments.length > 0 && (
                 <div className="space-y-1.5">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Lịch sử thanh toán:</span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('payment_history')}:</span>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {payments.map((payment, index) => (
                       <div
@@ -358,7 +361,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                             setNewPaymentAmount('');
                           }
                         }}
-                        placeholder="Số tiền..."
+                        placeholder={t('amount_placeholder')}
                         className="flex-1 min-w-0 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                       <button
@@ -373,18 +376,18 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                       type="text"
                       value={newPaymentNote}
                       onChange={(e) => setNewPaymentNote(e.target.value)}
-                      placeholder="Ghi chú (tùy chọn)..."
+                      placeholder={t('payment_note')}
                       className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                   <button
                     onClick={() => {
                       setNewPaymentAmount(remainingAmount.toLocaleString('vi-VN'));
-                      setNewPaymentNote('Thanh toán đủ');
+                      setNewPaymentNote(t('pay_full'));
                     }}
                     className="mt-2 text-xs text-primary-500 hover:text-primary-600 hover:underline"
                   >
-                    Điền số còn lại ({formatMoney(remainingAmount)})
+                    {t('fill_remaining')} ({formatMoney(remainingAmount)})
                   </button>
                 </div>
               )}
@@ -396,7 +399,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 <FiCheckSquare size={16} />
-                Checklist
+                {t('checklist_label')}
                 {totalChecks > 0 && (
                   <span className="text-xs text-gray-400 font-normal">
                     ({completedChecks}/{totalChecks})
@@ -499,7 +502,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                 value={newCheckItem}
                 onChange={(e) => setNewCheckItem(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddCheckItem()}
-                placeholder="Thêm mục mới..."
+                placeholder={t('add_new_item')}
                 className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-400"
               />
               <button
@@ -525,7 +528,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
               }`}
             >
               <FiCheck size={16} />
-              {task.status === 'completed' ? 'Đánh dấu chưa xong' : 'Hoàn thành'}
+              {task.status === 'completed' ? t('mark_incomplete') : t('mark_complete')}
             </button>
 
             <button
@@ -535,7 +538,7 @@ function TaskDetailModal({ task: initialTask, onClose }) {
                   ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30'
                   : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
-              title={task.reminderEnabled ? 'Tắt nhắc nhở' : 'Bật nhắc nhở'}
+              title={task.reminderEnabled ? t('turn_off_reminder') : t('turn_on_reminder')}
             >
               {task.reminderEnabled ? <FiBell size={16} /> : <FiBellOff size={16} />}
             </button>
@@ -547,14 +550,14 @@ function TaskDetailModal({ task: initialTask, onClose }) {
               className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-600 dark:text-gray-300"
             >
               <FiEdit2 size={14} />
-              Sửa
+              {t('edit')}
             </button>
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg text-red-600 dark:text-red-400"
             >
               <FiTrash2 size={14} />
-              Xóa
+              {t('delete')}
             </button>
           </div>
         </div>

@@ -22,10 +22,10 @@ export const DEFAULT_WEIGHTS = {
  * Quadrant definitions - Eisenhower Matrix
  */
 export const QUADRANTS = {
-  Q1: { id: 'Q1', name: 'Quan trọng & Gấp', color: '#ef4444', bgColor: 'bg-red-500', priority: 1 },
-  Q2: { id: 'Q2', name: 'Quan trọng & Không gấp', color: '#3b82f6', bgColor: 'bg-blue-500', priority: 2 },
-  Q3: { id: 'Q3', name: 'Không quan trọng & Gấp', color: '#f59e0b', bgColor: 'bg-amber-500', priority: 3 },
-  Q4: { id: 'Q4', name: 'Không quan trọng & Không gấp', color: '#6b7280', bgColor: 'bg-gray-500', priority: 4 }
+  Q1: { id: 'Q1', nameKey: 'quadrant_q1', color: '#ef4444', bgColor: 'bg-red-500', priority: 1 },
+  Q2: { id: 'Q2', nameKey: 'quadrant_q2', color: '#3b82f6', bgColor: 'bg-blue-500', priority: 2 },
+  Q3: { id: 'Q3', nameKey: 'quadrant_q3', color: '#f59e0b', bgColor: 'bg-amber-500', priority: 3 },
+  Q4: { id: 'Q4', nameKey: 'quadrant_q4', color: '#6b7280', bgColor: 'bg-gray-500', priority: 4 }
 };
 
 // ============ CORE FUNCTIONS ============
@@ -97,49 +97,50 @@ export function computeScore(task, weights = DEFAULT_WEIGHTS) {
 
 /**
  * Tạo lý do giải thích cho việc ưu tiên task
+ * Returns keys for i18n - translate in component
  */
 export function explainPriority(task, evaluation) {
   const reasons = [];
   const { quadrant, urgencyEffective, score } = evaluation;
   const { importance = 0, cash_now = 0, effort = 0, risk = 0, deadline } = task;
 
-  // Quadrant explanation
+  // Quadrant explanation - return key and data
   if (quadrant === 'Q1') {
     if (deadline) {
       const daysLeft = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
       if (daysLeft <= 0) {
-        reasons.push('⚠️ ĐÃ TRỄ DEADLINE! Cần xử lý ngay!');
+        reasons.push({ key: 'reason_overdue', icon: '⚠️' });
       } else if (daysLeft <= 1) {
-        reasons.push('🔥 Deadline trong 24h - Ưu tiên cao nhất!');
+        reasons.push({ key: 'reason_24h', icon: '🔥' });
       } else if (daysLeft <= 3) {
-        reasons.push(`⏰ Còn ${daysLeft} ngày - Quan trọng & Gấp`);
+        reasons.push({ key: 'reason_days_left', icon: '⏰', data: { days: daysLeft } });
       } else {
-        reasons.push('📌 Q1: Quan trọng + Gấp → Làm ngay!');
+        reasons.push({ key: 'reason_q1', icon: '📌' });
       }
     } else {
-      reasons.push('📌 Q1: Quan trọng + Gấp → Làm ngay!');
+      reasons.push({ key: 'reason_q1', icon: '📌' });
     }
   } else if (quadrant === 'Q2') {
-    reasons.push('📅 Q2: Quan trọng nhưng chưa gấp → Lên lịch làm');
+    reasons.push({ key: 'reason_q2', icon: '📅' });
   } else if (quadrant === 'Q3') {
-    reasons.push('🔄 Q3: Gấp nhưng không quan trọng → Cân nhắc ủy quyền');
+    reasons.push({ key: 'reason_q3', icon: '🔄' });
   } else {
-    reasons.push('📋 Q4: Không gấp, không quan trọng → Làm khi rảnh');
+    reasons.push({ key: 'reason_q4', icon: '📋' });
   }
 
   // Cash now highlight
   if (cash_now >= 2) {
-    reasons.push('💰 Tiền có thể về trong 7 ngày');
+    reasons.push({ key: 'reason_cash', icon: '💰' });
   }
 
   // Effort highlight (easy wins)
   if (effort >= 2) {
-    reasons.push('⚡ Việc dễ làm nhanh - Quick win!');
+    reasons.push({ key: 'reason_easy', icon: '⚡' });
   }
 
   // Risk warning
   if (risk >= 2) {
-    reasons.push('⚠️ Có rủi ro - Cần chuẩn bị kỹ');
+    reasons.push({ key: 'reason_risk', icon: '⚠️' });
   }
 
   return reasons;
@@ -239,6 +240,7 @@ export function getTodayFocus(tasks, weights = DEFAULT_WEIGHTS, now = new Date()
 
 /**
  * Generate motivational banners based on stats
+ * Returns raw data with i18nKey - translate in component
  */
 export function generateBanners(stats, tasks) {
   const banners = [];
@@ -262,8 +264,8 @@ export function generateBanners(stats, tasks) {
       banners.push({
         type: 'celebration',
         icon: '🎉',
-        title: `Chúc mừng! Đã kiếm được ${(milestone / 1000000).toFixed(0)}M tháng này!`,
-        message: `Tổng thu nhập: ${monthlyIncome.toLocaleString()}đ - Tuyệt vời!`,
+        titleKey: 'banner_congrats_earned',
+        titleData: { milestone: (milestone / 1000000).toFixed(0), amount: monthlyIncome },
         color: 'green',
         priority: 0
       });
@@ -277,10 +279,10 @@ export function generateBanners(stats, tasks) {
     const maxStreak = Math.max(...longTermTasks.map(t => t.currentStreak || 0));
     if (maxStreak >= 30) {
       banners.push({
-        type: 'streak',
+        type: 'streak_amazing',
         icon: '🔥',
-        title: `Streak ${maxStreak} ngày! Kinh ngạc!`,
-        message: 'Bạn đang xây dựng thói quen tuyệt vời!',
+        titleKey: 'banner_streak_amazing',
+        titleData: { days: maxStreak },
         color: 'orange',
         priority: 1
       });
@@ -288,8 +290,8 @@ export function generateBanners(stats, tasks) {
       banners.push({
         type: 'streak',
         icon: '⚡',
-        title: `Streak ${maxStreak} ngày liên tục!`,
-        message: 'Tiếp tục duy trì nhé!',
+        titleKey: 'banner_streak_days',
+        titleData: { days: maxStreak },
         color: 'blue',
         priority: 1
       });
@@ -308,8 +310,8 @@ export function generateBanners(stats, tasks) {
     banners.push({
       type: 'danger',
       icon: '🚨',
-      title: `${overdueTasks.length} việc trễ deadline!`,
-      message: 'Cần xử lý ngay để tránh ảnh hưởng!',
+      titleKey: 'banner_overdue',
+      titleData: { count: overdueTasks.length },
       color: 'red',
       priority: 2
     });
@@ -327,8 +329,8 @@ export function generateBanners(stats, tasks) {
     banners.push({
       type: 'urgent',
       icon: '⏰',
-      title: `${todayDeadlines.length} việc deadline hôm nay!`,
-      message: 'Tập trung hoàn thành trước khi hết ngày.',
+      titleKey: 'banner_today_deadline',
+      titleData: { count: todayDeadlines.length },
       color: 'orange',
       priority: 2
     });
@@ -341,8 +343,8 @@ export function generateBanners(stats, tasks) {
       banners.push({
         type: 'money',
         icon: '💸',
-        title: `${unpaidCount} việc chưa nhận tiền`,
-        message: `Tổng: ${stats.unpaidAmount.toLocaleString()}đ - Nhớ đòi tiền nhé!`,
+        titleKey: 'banner_unpaid',
+        titleData: { count: unpaidCount, amount: stats.unpaidAmount },
         color: 'yellow',
         priority: 3
       });
@@ -354,8 +356,8 @@ export function generateBanners(stats, tasks) {
     banners.push({
       type: 'success',
       icon: '🏆',
-      title: 'Xuất sắc!',
-      message: `Tỷ lệ hoàn thành ${stats.completionRate}% - Bạn đang làm rất tốt!`,
+      titleKey: 'banner_excellent',
+      titleData: { rate: stats.completionRate },
       color: 'green',
       priority: 4
     });
@@ -363,8 +365,7 @@ export function generateBanners(stats, tasks) {
     banners.push({
       type: 'warning',
       icon: '⚡',
-      title: 'Cần tập trung!',
-      message: 'Còn nhiều việc chưa hoàn thành. Hãy bắt đầu với việc nhỏ nhất!',
+      titleKey: 'banner_need_focus',
       color: 'amber',
       priority: 4
     });
@@ -402,6 +403,7 @@ export function categorizeTasksByType(tasks, weights = DEFAULT_WEIGHTS, now = ne
 
 /**
  * Get advice based on current situation
+ * Returns keys for i18n - translate in component
  */
 export function getSmartAdvice(tasks, stats) {
   const advice = [];
@@ -420,9 +422,10 @@ export function getSmartAdvice(tasks, stats) {
     advice.push({
       type: 'income',
       icon: '💰',
-      title: 'Ưu tiên việc kiếm tiền',
-      message: `${pendingIncome.length} việc có thể mang về ${totalPending.toLocaleString()}đ. Làm trước để có thu nhập!`,
-      action: 'Xem việc kiếm tiền'
+      titleKey: 'advice_income_title',
+      messageKey: 'advice_income_msg',
+      messageData: { count: pendingIncome.length, amount: totalPending },
+      actionKey: 'advice_income_action'
     });
   }
 
@@ -431,17 +434,18 @@ export function getSmartAdvice(tasks, stats) {
     advice.push({
       type: 'investment',
       icon: '🚀',
-      title: 'Thời điểm tốt để đầu tư',
-      message: 'Không có việc gấp. Hãy dành thời gian cho dự án dài hạn!',
-      action: 'Xem dự án đầu tư'
+      titleKey: 'advice_invest_good_time',
+      messageKey: 'advice_invest_no_urgent',
+      actionKey: 'advice_invest_action'
     });
   } else if (pendingInvestment.length > 0) {
     advice.push({
       type: 'investment',
       icon: '📅',
-      title: 'Đừng quên dự án tương lai',
-      message: `${pendingInvestment.length} dự án đầu tư. Block 1-2 tiếng/ngày để tiến bộ!`,
-      action: 'Xem dự án đầu tư'
+      titleKey: 'advice_invest_dont_forget',
+      messageKey: 'advice_invest_block_time',
+      messageData: { count: pendingInvestment.length },
+      actionKey: 'advice_invest_action'
     });
   }
 
@@ -450,9 +454,10 @@ export function getSmartAdvice(tasks, stats) {
     advice.push({
       type: 'checkin',
       icon: '🎯',
-      title: 'Điểm danh dự án dài hạn',
-      message: `${uncheckedLongTerm.length} dự án chờ điểm danh. Giữ streak để xây thói quen!`,
-      action: 'Điểm danh ngay'
+      titleKey: 'advice_checkin_title',
+      messageKey: 'advice_checkin_msg',
+      messageData: { count: uncheckedLongTerm.length },
+      actionKey: 'advice_checkin_action'
     });
   }
 
@@ -473,15 +478,15 @@ export function mapLegacyPriority(priority) {
 }
 
 /**
- * Get importance label
+ * Get importance label key for i18n
  */
-export function getImportanceLabel(level) {
+export function getImportanceLabelKey(level) {
   switch (level) {
-    case 3: return 'Rất quan trọng';
-    case 2: return 'Quan trọng';
-    case 1: return 'Bình thường';
-    case 0: return 'Không quan trọng';
-    default: return 'Bình thường';
+    case 3: return 'importance_3';
+    case 2: return 'importance_2';
+    case 1: return 'importance_1';
+    case 0: return 'importance_0';
+    default: return 'importance_1';
   }
 }
 

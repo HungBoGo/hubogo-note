@@ -1,18 +1,69 @@
 // Changelog data for What's New dialog
-export const APP_VERSION = '1.0.6';
+export const APP_VERSION = '1.0.7';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.7',
+    date: '2026-01-09',
+    title: 'Full Bilingual Support',
+    title_en: 'Full Bilingual Support',
+    title_vi: 'Hỗ trợ song ngữ hoàn chỉnh',
+    highlights: [
+      '🌍 Complete EN/VI translation',
+      '🔄 Autostart toggle ON/OFF bilingual',
+      '📊 Priority reasons translated',
+      '📅 Compact date format (3mo, 2w)'
+    ],
+    highlights_vi: [
+      '🌍 Dịch hoàn chỉnh EN/VI',
+      '🔄 Nút bật/tắt khởi động song ngữ',
+      '📊 Lý do ưu tiên được dịch',
+      '📅 Định dạng ngày gọn (3 tháng, 2 tuần)'
+    ],
+    changes: [
+      'Translated Smart Advice section',
+      'Translated Quadrant names (Q1-Q4)',
+      'Translated priority reasons badges',
+      'Autostart shows BẬT/TẮT (VI) or ON/OFF (EN)',
+      'Compact relative dates in TaskItem',
+      'Fixed remaining Vietnamese text in English mode'
+    ],
+    changes_vi: [
+      'Dịch phần Smart Advice',
+      'Dịch tên Quadrant (Q1-Q4)',
+      'Dịch badge lý do ưu tiên',
+      'Autostart hiện BẬT/TẮT (VI) hoặc ON/OFF (EN)',
+      'Ngày tương đối gọn trong TaskItem',
+      'Sửa text tiếng Việt còn sót ở chế độ English'
+    ]
+  },
   {
     version: '1.0.6',
     date: '2026-01-08',
     title: 'Sao lưu & Khôi phục dữ liệu',
+    title_en: 'Data Backup & Restore',
+    title_vi: 'Sao lưu & Khôi phục dữ liệu',
     highlights: [
       '💾 Xuất dữ liệu ra file backup (JSON)',
       '📂 Nhập dữ liệu từ file backup',
       '🔒 Bảo vệ dữ liệu khi cài lại Windows',
       '🌍 Landing page đa ngôn ngữ'
     ],
+    highlights_vi: [
+      '💾 Xuất dữ liệu ra file backup (JSON)',
+      '📂 Nhập dữ liệu từ file backup',
+      '🔒 Bảo vệ dữ liệu khi cài lại Windows',
+      '🌍 Landing page đa ngôn ngữ'
+    ],
     changes: [
+      'Thêm nút Xuất dữ liệu - lưu toàn bộ công việc ra file',
+      'Thêm nút Nhập dữ liệu - khôi phục từ file backup',
+      'Hỗ trợ lưu backup ra ổ D: hoặc USB',
+      'Tự động detect ngôn ngữ browser cho landing page',
+      'Cập nhật landing page với download counter',
+      'Build cho cả Windows và macOS'
+    ],
+    changes_vi: [
       'Thêm nút Xuất dữ liệu - lưu toàn bộ công việc ra file',
       'Thêm nút Nhập dữ liệu - khôi phục từ file backup',
       'Hỗ trợ lưu backup ra ổ D: hoặc USB',

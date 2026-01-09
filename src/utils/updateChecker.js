@@ -1,8 +1,8 @@
 // Update checker utility
 import { APP_VERSION, isNewerVersion } from './changelog';
 
-const GITHUB_REPO = 'user/hubogo-note'; // Change this to your actual repo
-const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Check every 24 hours
+const GITHUB_REPO = 'huynhhung1108/hubogo-note'; // Your actual GitHub repo
+const CHECK_INTERVAL = 6 * 60 * 60 * 1000; // Check every 6 hours
 
 // Storage keys
 const LAST_CHECK_KEY = 'hubogo_last_update_check';
@@ -41,28 +41,49 @@ export function markVersionAsSeen() {
 }
 
 // Check for updates from GitHub releases
-export async function checkForUpdates() {
+export async function checkForUpdates(forceCheck = false) {
   try {
     // Check if enough time has passed since last check
-    const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
-    if (lastCheck) {
-      const timeSince = Date.now() - parseInt(lastCheck);
-      if (timeSince < CHECK_INTERVAL) {
-        return null; // Too soon to check again
+    if (!forceCheck) {
+      const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
+      if (lastCheck) {
+        const timeSince = Date.now() - parseInt(lastCheck);
+        if (timeSince < CHECK_INTERVAL) {
+          return null; // Too soon to check again
+        }
       }
     }
 
-    // For now, we'll use a simple version check
-    // In production, you would fetch from GitHub API:
-    // const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
-    // const data = await response.json();
-    // const latestVersion = data.tag_name.replace('v', '');
+    // Fetch latest release from GitHub API
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+
+    if (!response.ok) {
+      console.log('GitHub API response not ok:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const latestVersion = data.tag_name.replace('v', '');
+    const downloadUrl = data.html_url;
 
     // Mark that we checked
     localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
 
-    // Simulated check - in production replace with actual API call
-    // For demo purposes, we'll return null (no update)
+    // Check if there's a newer version
+    if (isNewerVersion(latestVersion, APP_VERSION)) {
+      // Check if user skipped this version
+      if (getSkippedVersion() === latestVersion) {
+        return null;
+      }
+      return {
+        version: latestVersion,
+        currentVersion: APP_VERSION,
+        downloadUrl,
+        releaseNotes: data.body || '',
+        publishedAt: data.published_at
+      };
+    }
+
     return null;
 
   } catch (error) {

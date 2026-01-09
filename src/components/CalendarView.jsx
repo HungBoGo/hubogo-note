@@ -11,24 +11,30 @@ import {
   isToday,
   getDay
 } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi, enUS } from 'date-fns/locale';
 import { FiCheck, FiClock, FiDollarSign, FiChevronLeft, FiChevronRight, FiPlus } from 'react-icons/fi';
 import useStore from '../store/useStore';
 import TaskDetailModal from './TaskDetailModal';
+import { useTranslation } from '../utils/i18n';
 
-const PERIODS = [
-  { key: '7d', label: '7 ngày', days: 7 },
-  { key: '30d', label: '30 ngày', days: 30 },
-  { key: '90d', label: '90 ngày', days: 90 },
-  { key: '1y', label: '1 năm', days: 365 },
-  { key: 'all', label: 'Tất cả', days: null }
-];
-
-const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const WEEKDAYS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function CalendarView() {
   const { tasks, categories, openTaskForm, toggleTaskComplete, toggleTaskPaid, formatMoney, formatMoneyShort } = useStore();
+  const { t, language } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
+
+  const PERIODS = [
+    { key: '7d', label: t('days_7'), days: 7 },
+    { key: '30d', label: t('days_30'), days: 30 },
+    { key: '90d', label: t('days_90'), days: 90 },
+    { key: '1y', label: t('year_1'), days: 365 },
+    { key: 'all', label: t('all'), days: null }
+  ];
+
+  const WEEKDAYS = language === 'vi' ? WEEKDAYS_VI : WEEKDAYS_EN;
+  const dateLocale = language === 'vi' ? vi : enUS;
   const [viewOffset, setViewOffset] = useState(0); // For pagination
   const [selectedTask, setSelectedTask] = useState(null); // For detail modal
 
@@ -89,7 +95,7 @@ function CalendarView() {
 
   // Get category by id
   const getCategoryById = (id) => {
-    return categories.find(c => c.id === id) || { name: 'Khác', color: '#6b7280', icon: '📋' };
+    return categories.find(c => c.id === id) || { name: language === 'vi' ? 'Khác' : 'Other', color: '#6b7280', icon: '📋' };
   };
 
   // Priority colors
@@ -120,16 +126,16 @@ function CalendarView() {
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-primary-500">
-            Lịch công việc
+            {t('task_calendar')}
           </h1>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {filteredTasks.length} công việc
+              {filteredTasks.length} {t('tasks_count')}
             </span>
             <button
               onClick={() => openTaskForm()}
               className="p-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
-              title="Thêm công việc mới"
+              title={t('add_new_task')}
             >
               <FiPlus size={18} />
             </button>
@@ -157,19 +163,19 @@ function CalendarView() {
         <div className="flex flex-wrap gap-2 mt-3 text-xs">
           <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
             <FiCheck size={12} />
-            {periodStats.completed} xong
+            {periodStats.completed} {t('completed')}
           </div>
           <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
             <FiClock size={12} />
-            {periodStats.pending} đang làm
+            {periodStats.pending} {t('in_progress')}
           </div>
-          <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full" title="Đã thanh toán">
+          <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full" title={t('paid')}>
             <FiDollarSign size={12} />
             ✓ {formatMoneyShort(periodStats.paidAmount)}
           </div>
-          <div className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full" title="Chưa thanh toán">
+          <div className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full" title={t('unpaid')}>
             <FiDollarSign size={12} />
-            {formatMoneyShort(periodStats.totalAmount - periodStats.paidAmount)} chưa TT
+            {formatMoneyShort(periodStats.totalAmount - periodStats.paidAmount)} {t('unpaid')}
           </div>
         </div>
       </div>
@@ -179,13 +185,13 @@ function CalendarView() {
         {calendarDays.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <div className="text-5xl mb-3">📅</div>
-            <p>Chưa có công việc trong khoảng thời gian này</p>
+            <p>{t('no_tasks_period')}</p>
             <button
               onClick={() => openTaskForm()}
               className="mt-4 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-2"
             >
               <FiPlus size={16} />
-              Thêm công việc đầu tiên
+              {t('add_first_task')}
             </button>
           </div>
         ) : (
@@ -234,7 +240,7 @@ function CalendarView() {
                         {format(day, 'dd/MM/yyyy', { locale: vi })}
                       </span>
                       {dayIsToday && (
-                        <span className="text-xs text-primary-500 font-medium">Hôm nay</span>
+                        <span className="text-xs text-primary-500 font-medium">{t('today')}</span>
                       )}
                     </div>
                     <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { APP_VERSION, getChangelogsSince, getVersionChangelog } from '../utils/changelog';
 import { shouldShowWhatsNew, markVersionAsSeen, getLastKnownVersion } from '../utils/updateChecker';
+import { useTranslation } from '../utils/i18n';
 
 function WhatsNewDialog({ onClose }) {
+  const { t, language } = useTranslation();
   const lastVersion = getLastKnownVersion();
   const changelogs = getChangelogsSince(lastVersion);
   const currentChangelog = getVersionChangelog(APP_VERSION);
@@ -14,6 +16,22 @@ function WhatsNewDialog({ onClose }) {
 
   if (!currentChangelog) return null;
 
+  // Get localized content
+  const getTitle = (log) => {
+    if (language === 'vi') return log.title_vi || log.title;
+    return log.title_en || log.title;
+  };
+
+  const getHighlights = (log) => {
+    if (language === 'vi') return log.highlights_vi || log.highlights;
+    return log.highlights;
+  };
+
+  const getChanges = (log) => {
+    if (language === 'vi') return log.changes_vi || log.changes;
+    return log.changes;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
@@ -22,11 +40,11 @@ function WhatsNewDialog({ onClose }) {
           <div className="flex items-center gap-3 mb-2">
             <span className="text-4xl">🎉</span>
             <div>
-              <h2 className="text-2xl font-bold">Có gì mới!</h2>
+              <h2 className="text-2xl font-bold">{language === 'vi' ? 'Có gì mới!' : "What's New!"}</h2>
               <p className="text-white/80">HubogoNote v{APP_VERSION}</p>
             </div>
           </div>
-          <p className="text-white/90 mt-2">{currentChangelog.title}</p>
+          <p className="text-white/90 mt-2">{getTitle(currentChangelog)}</p>
         </div>
 
         {/* Content */}
@@ -34,10 +52,10 @@ function WhatsNewDialog({ onClose }) {
           {/* Highlights */}
           <div className="mb-6">
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              <span>Điểm nổi bật</span>
+              <span>{language === 'vi' ? 'Điểm nổi bật' : 'Highlights'}</span>
             </h3>
             <div className="space-y-2">
-              {currentChangelog.highlights.map((highlight, idx) => (
+              {getHighlights(currentChangelog).map((highlight, idx) => (
                 <div
                   key={idx}
                   className="flex items-start gap-3 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl"
@@ -54,10 +72,10 @@ function WhatsNewDialog({ onClose }) {
           {/* Changes */}
           <div>
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Chi tiết thay đổi
+              {language === 'vi' ? 'Chi tiết thay đổi' : 'Change Details'}
             </h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              {currentChangelog.changes.map((change, idx) => (
+              {getChanges(currentChangelog).map((change, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="text-green-500 mt-0.5">✓</span>
                   <span>{change}</span>
@@ -71,7 +89,9 @@ function WhatsNewDialog({ onClose }) {
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <details className="group">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                  Xem các phiên bản trước ({changelogs.length - 1} bản cập nhật)
+                  {language === 'vi'
+                    ? `Xem các phiên bản trước (${changelogs.length - 1} bản cập nhật)`
+                    : `View previous versions (${changelogs.length - 1} updates)`}
                 </summary>
                 <div className="mt-4 space-y-4">
                   {changelogs.slice(1).map((log) => (
@@ -82,7 +102,7 @@ function WhatsNewDialog({ onClose }) {
                         </span>
                         <span className="text-xs text-gray-500">{log.date}</span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{log.title}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{getTitle(log)}</p>
                     </div>
                   ))}
                 </div>
@@ -97,7 +117,7 @@ function WhatsNewDialog({ onClose }) {
             onClick={handleClose}
             className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
           >
-            Bắt đầu sử dụng
+            {language === 'vi' ? 'Bắt đầu sử dụng' : 'Get Started'}
           </button>
         </div>
       </div>

@@ -10,9 +10,9 @@ import TaskStatusView from "./components/TaskStatusView";
 import AboutView from "./components/AboutView";
 import TitleBar from "./components/TitleBar";
 import WhatsNewDialog, { useWhatsNew } from "./components/WhatsNewDialog";
+import UpdateNotification from "./components/UpdateNotification";
 import { startDeadlineChecker, requestNotificationPermission } from "./utils/notifications";
 import { startAutoBackup } from "./utils/backup";
-import { checkForUpdates } from "./utils/updateChecker";
 
 function App() {
   const { theme, loadTasks, loadCategories, tasks, exportData, selectedView, isTaskFormOpen, isCategoryFormOpen } = useStore();
@@ -22,8 +22,6 @@ function App() {
     loadTasks();
     loadCategories();
     requestNotificationPermission();
-    // Check for updates in background
-    checkForUpdates();
   }, []);
 
   useEffect(() => {
@@ -68,6 +66,7 @@ function App() {
       {isTaskFormOpen && <TaskForm />}
       {isCategoryFormOpen && <CategoryForm />}
       {showWhatsNew && <WhatsNewDialog onClose={closeWhatsNew} />}
+      <UpdateNotification />
     </div>
   );
 }

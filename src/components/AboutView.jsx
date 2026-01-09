@@ -1,124 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { FiFacebook, FiPhone, FiHeart, FiCode, FiCoffee, FiZap, FiSettings, FiPower, FiDownload, FiUpload, FiFolder, FiDatabase } from 'react-icons/fi';
-import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
-import { exportData, importData } from '../database/db';
+import React from 'react';
+import { FiFacebook, FiPhone, FiHeart, FiCode, FiCoffee, FiZap } from 'react-icons/fi';
 import logoImg from '../../assets/icon.png';
 import techcombankLogo from '../../assets/techcombank-logo.png';
 import qrTechcombank from '../../assets/qr-techcombank.jpg';
+import { useTranslation } from '../utils/i18n';
 
 function AboutView() {
-  const [autostartEnabled, setAutostartEnabled] = useState(false);
-  const [autostartLoading, setAutostartLoading] = useState(true);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-
-  // Check autostart status on mount
-  useEffect(() => {
-    const checkAutostart = async () => {
-      try {
-        const enabled = await isEnabled();
-        setAutostartEnabled(enabled);
-      } catch (err) {
-        console.error('Failed to check autostart status:', err);
-      } finally {
-        setAutostartLoading(false);
-      }
-    };
-    checkAutostart();
-  }, []);
-
-  // Toggle autostart
-  const handleToggleAutostart = async () => {
-    setAutostartLoading(true);
-    try {
-      if (autostartEnabled) {
-        await disable();
-        setAutostartEnabled(false);
-      } else {
-        await enable();
-        setAutostartEnabled(true);
-      }
-    } catch (err) {
-      console.error('Failed to toggle autostart:', err);
-      alert('Không thể thay đổi cài đặt khởi động. Vui lòng thử lại.');
-    } finally {
-      setAutostartLoading(false);
-    }
-  };
-
-  // Export data to file
-  const handleExport = async () => {
-    setExportLoading(true);
-    try {
-      const data = exportData();
-      const jsonString = JSON.stringify(data, null, 2);
-
-      const filePath = await save({
-        defaultPath: `hubogo-backup-${new Date().toISOString().split('T')[0]}.json`,
-        filters: [{
-          name: 'JSON',
-          extensions: ['json']
-        }]
-      });
-
-      if (filePath) {
-        await writeTextFile(filePath, jsonString);
-        alert(`✅ Xuất dữ liệu thành công!\n\nĐã lưu tại:\n${filePath}\n\nTổng: ${data.tasks.length} công việc, ${data.categories.length} danh mục`);
-      }
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('❌ Xuất dữ liệu thất bại: ' + err.message);
-    } finally {
-      setExportLoading(false);
-    }
-  };
-
-  // Import data from file
-  const handleImport = async () => {
-    setImportLoading(true);
-    try {
-      const filePath = await open({
-        multiple: false,
-        filters: [{
-          name: 'JSON',
-          extensions: ['json']
-        }]
-      });
-
-      if (filePath) {
-        const content = await readTextFile(filePath);
-        const data = JSON.parse(content);
-
-        // Validate data structure
-        if (!data.tasks || !data.categories) {
-          throw new Error('File không đúng định dạng backup của HubogoNote');
-        }
-
-        const confirmImport = confirm(
-          `⚠️ CẢNH BÁO\n\n` +
-          `File backup chứa:\n` +
-          `• ${data.tasks.length} công việc\n` +
-          `• ${data.categories.length} danh mục\n\n` +
-          `Nhập dữ liệu này sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại!\n\n` +
-          `Bạn có chắc chắn muốn tiếp tục?`
-        );
-
-        if (confirmImport) {
-          importData(data);
-          alert('✅ Nhập dữ liệu thành công!\n\nVui lòng khởi động lại ứng dụng để thấy thay đổi.');
-          // Reload page to reflect changes
-          window.location.reload();
-        }
-      }
-    } catch (err) {
-      console.error('Import failed:', err);
-      alert('❌ Nhập dữ liệu thất bại: ' + err.message);
-    } finally {
-      setImportLoading(false);
-    }
-  };
+  const { t, language } = useTranslation();
 
   return (
     <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -127,179 +15,76 @@ function AboutView() {
         <div className="text-center mb-8">
           <img src={logoImg} alt="HubogoNote" className="w-24 h-24 mx-auto mb-4 drop-shadow-lg" />
           <h1 className="text-3xl font-bold text-primary-500 mb-2">HubogoNote</h1>
-          <p className="text-gray-500 dark:text-gray-400">Phiên bản 1.0.6</p>
-        </div>
-
-        {/* Settings Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <FiSettings className="text-gray-500" />
-            Cài đặt
-          </h2>
-
-          <div className="space-y-4">
-            {/* Autostart toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                  <FiPower className="text-blue-500" size={18} />
-                </div>
-                <div>
-                  <div className="font-medium text-gray-800 dark:text-white">
-                    Khởi động cùng Windows
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Tự động mở app khi bật máy tính
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={handleToggleAutostart}
-                disabled={autostartLoading}
-                className={`relative w-14 h-8 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-                  autostartEnabled
-                    ? 'bg-blue-500'
-                    : 'bg-gray-300 dark:bg-gray-600'
-                } ${autostartLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                <span
-                  className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${
-                    autostartEnabled ? 'translate-x-6' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Data Backup Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <FiDatabase className="text-purple-500" />
-            Sao lưu dữ liệu
-          </h2>
-
-          <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-            Xuất dữ liệu để backup ra ổ D: hoặc USB. Khi cài lại Windows, chỉ cần nhập file backup là khôi phục toàn bộ công việc.
-          </p>
-
-          <div className="grid grid-cols-2 gap-3">
-            {/* Export button */}
-            <button
-              onClick={handleExport}
-              disabled={exportLoading}
-              className="flex items-center justify-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl transition-colors group"
-            >
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FiDownload className="text-white" size={20} />
-              </div>
-              <div className="text-left">
-                <div className="font-medium text-gray-800 dark:text-white">
-                  {exportLoading ? 'Đang xuất...' : 'Xuất dữ liệu'}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Lưu file backup
-                </div>
-              </div>
-            </button>
-
-            {/* Import button */}
-            <button
-              onClick={handleImport}
-              disabled={importLoading}
-              className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl transition-colors group"
-            >
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FiUpload className="text-white" size={20} />
-              </div>
-              <div className="text-left">
-                <div className="font-medium text-gray-800 dark:text-white">
-                  {importLoading ? 'Đang nhập...' : 'Nhập dữ liệu'}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Khôi phục từ backup
-                </div>
-              </div>
-            </button>
-          </div>
-
-          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              💡 <strong>Mẹo:</strong> Lưu file backup vào ổ D: hoặc Google Drive. Khi cài lại Windows, dữ liệu ổ D: không bị mất!
-            </p>
-          </div>
+          <p className="text-gray-500 dark:text-gray-400">{t('version')} 1.0.7</p>
         </div>
 
         {/* Story Section */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FiCoffee className="text-orange-500" />
-            Câu chuyện ra đời
+            {t('story')}
           </h2>
 
           <div className="prose prose-sm dark:prose-invert text-gray-600 dark:text-gray-300 space-y-4">
             <p>
-              Xin chào! Mình là <strong className="text-primary-500">Nguyễn Huy Hùng</strong>, hay còn gọi là <strong className="text-primary-500">Hubogo</strong>.
+              {t('story_intro')} <strong className="text-primary-500">{t('story_author')}</strong>, {t('story_aka')} <strong className="text-primary-500">Hubogo</strong>.
             </p>
 
             <p>
-              Mình chỉ là một người bình thường thôi. Nhưng có một thứ khiến mình... <span className="text-red-500 font-semibold">điên đầu</span>.
-              Đó là <span className="italic">deadline</span>.
+              {t('story_p1')} <span className="text-red-500 font-semibold">{t('story_crazy')}</span>.
+              {' '}{t('story_p2')} <span className="italic">{t('story_deadline')}</span>.
             </p>
 
             <p>
-              Bạn biết cảm giác đó không? Khi khách hàng gọi điện hỏi tiến độ, còn bạn thì...
-              <span className="text-orange-500"> "Ơ, em nhận việc này lúc nào nhỉ?"</span>
+              {t('story_p3')}
+              <span className="text-orange-500"> {t('story_quote1')}</span>
             </p>
 
             <p>
-              Hay tệ hơn: <span className="text-red-500">"Anh ơi, sao hôm qua hẹn giao mà chưa thấy?"</span>
+              {t('story_worse')} <span className="text-red-500">{t('story_quote2')}</span>
             </p>
 
             <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg my-4">
               <p className="text-red-700 dark:text-red-400 font-medium m-0">
-                💀 Mình đã trải qua cảm giác đó không biết bao nhiêu lần. Quên việc, nhầm deadline,
-                lẫn lộn giữa đống công việc chồng chất...
+                💀 {t('story_struggle')}
               </p>
             </div>
 
             <p>
-              Mình thử đủ app quản lý công việc. Notion thì quá phức tạp. Todoist thì không hợp.
-              Sticky Notes của Windows thì... chỉ là giấy note thôi.
+              {t('story_tried')}
             </p>
 
             <p className="font-medium text-gray-800 dark:text-white">
-              Thế là mình quyết định: <span className="text-primary-500">"Tự làm một cái cho mình dùng!"</span>
+              {t('story_decided')} <span className="text-primary-500">{t('story_make_own')}</span>
             </p>
 
             <div className="bg-primary-50 dark:bg-primary-900/20 border-l-4 border-primary-500 p-4 rounded-r-lg my-4">
               <p className="text-primary-700 dark:text-primary-400 m-0">
                 <FiZap className="inline mr-2" />
-                Và với sự trợ giúp của <strong>Claude AI</strong>, sau nhiều đêm thức trắng (okay, Claude không ngủ,
-                chỉ có mình thức thôi 😅), <strong>HubogoNote</strong> đã ra đời!
+                {t('story_claude')} <strong>Claude AI</strong>, {t('story_nights')} <strong>HubogoNote</strong> {t('story_born')}
               </p>
             </div>
 
             <p>
-              Một ứng dụng đơn giản, dễ dùng, giúp mình:
+              {t('story_helps')}
             </p>
 
             <ul className="list-none space-y-2 pl-0">
               <li className="flex items-center gap-2">
                 <span className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600">✓</span>
-                Không bao giờ quên việc nữa
+                {t('story_benefit1')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600">✓</span>
-                Biết việc nào gấp, việc nào có thể từ từ
+                {t('story_benefit2')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600">✓</span>
-                Theo dõi tiền công - ai đã trả, ai còn nợ
+                {t('story_benefit3')}
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600">✓</span>
-                Và quan trọng nhất: <strong>không còn bị khách mắng vì quên deadline!</strong>
+                <strong>{t('story_benefit4')}</strong>
               </li>
             </ul>
           </div>
@@ -309,11 +94,11 @@ function AboutView() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FiCode className="text-blue-500" />
-            Được xây dựng với
+            {t('built_with')}
           </h2>
 
           <div className="flex flex-wrap gap-2">
-            {['React', 'Tauri', 'TailwindCSS', 'Claude AI', 'Tình yêu ❤️', 'Cà phê ☕'].map(tech => (
+            {['React', 'Tauri', 'TailwindCSS', 'Claude AI', language === 'vi' ? 'Tình yêu ❤️' : 'Love ❤️', language === 'vi' ? 'Cà phê ☕' : 'Coffee ☕'].map(tech => (
               <span
                 key={tech}
                 className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm"
@@ -328,13 +113,12 @@ function AboutView() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FiHeart className="text-red-500" />
-            Liên hệ tác giả
+            {t('contact')}
           </h2>
 
           <div className="space-y-3">
             <p className="text-gray-600 dark:text-gray-300">
-              Nếu bạn có góp ý, phản hồi, hoặc chỉ đơn giản là muốn nói chuyện về công việc,
-              cuộc sống, hay bất cứ điều gì - hãy liên hệ mình nhé!
+              {t('contact_desc')}
             </p>
 
             <a
@@ -365,7 +149,7 @@ function AboutView() {
               </div>
               <div>
                 <div className="font-medium text-gray-800 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">
-                  Điện thoại
+                  {t('phone')}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   0915 377 575
@@ -379,70 +163,109 @@ function AboutView() {
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-6 shadow-lg mb-6 border border-amber-200 dark:border-amber-800">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FiCoffee className="text-amber-600" />
-            Mời tác giả ly cà phê ☕
+            {t('buy_coffee')} ☕
           </h2>
 
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Nếu bạn thích ứng dụng này và muốn ủng hộ tác giả, bạn có thể mời mình một ly cà phê nhé!
-            Mỗi đóng góp đều là động lực để mình tiếp tục phát triển app tốt hơn. 🙏
+            {t('coffee_desc')}
           </p>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-amber-300 dark:border-amber-700">
-            {/* QR Code */}
-            <div className="flex justify-center mb-4">
-              <div className="bg-white p-2 rounded-xl shadow-md">
+          {language === 'vi' ? (
+            /* Vietnamese - Techcombank */
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-amber-300 dark:border-amber-700">
+              {/* QR Code */}
+              <div className="flex justify-center mb-4">
+                <div className="bg-white p-2 rounded-xl shadow-md">
+                  <img
+                    src={qrTechcombank}
+                    alt="QR Techcombank"
+                    className="w-48 h-48 object-contain rounded-lg"
+                  />
+                </div>
+              </div>
+
+              {/* Bank info */}
+              <div className="flex items-center gap-4">
+                {/* Techcombank Logo */}
                 <img
-                  src={qrTechcombank}
-                  alt="QR Techcombank"
-                  className="w-48 h-48 object-contain rounded-lg"
+                  src={techcombankLogo}
+                  alt="Techcombank"
+                  className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
                 />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Techcombank</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white font-mono tracking-wider">
+                    8084666889
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                    NGUYEN HUY HUNG
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('8084666889');
+                    alert(t('copied'));
+                  }}
+                  className="px-3 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {t('copy_account')}
+                </button>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center">
+                  💡 {t('coffee_qr_hint')} <span className="font-medium text-amber-600 dark:text-amber-400">{t('coffee_message')}</span>
+                </p>
               </div>
             </div>
+          ) : (
+            /* English - PayPal */
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-blue-300 dark:border-blue-700">
+              {/* PayPal Logo */}
+              <div className="flex justify-center mb-4">
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white text-4xl font-bold">PayPal</span>
+                </div>
+              </div>
 
-            {/* Bank info */}
-            <div className="flex items-center gap-4">
-              {/* Techcombank Logo */}
-              <img
-                src={techcombankLogo}
-                alt="Techcombank"
-                className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Techcombank</p>
-                <p className="text-xl font-bold text-gray-800 dark:text-white font-mono tracking-wider">
-                  8084666889
+              {/* PayPal info */}
+              <div className="text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Send via PayPal to:</p>
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 font-mono">
+                  hbg.dream@gmail.com
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                  NGUYEN HUY HUNG
+                <p className="text-sm text-gray-600 dark:text-gray-300 font-medium mt-1">
+                  Nguyen Huy Hung (Hubogo)
+                </p>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('hbg.dream@gmail.com');
+                    alert('Email copied!');
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Copy PayPal Email
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center">
+                  💡 Any amount is appreciated! Leave a message: <span className="font-medium text-blue-600 dark:text-blue-400">"Coffee for Hubogo"</span>
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText('8084666889');
-                  alert('Đã copy số tài khoản!');
-                }}
-                className="px-3 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium transition-colors"
-              >
-                Copy STK
-              </button>
             </div>
-
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center">
-                💡 Quét mã QR hoặc chuyển khoản với nội dung: <span className="font-medium text-amber-600 dark:text-amber-400">"Moi cafe Hubogo"</span>
-              </p>
-            </div>
-          </div>
+          )}
 
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-            Cảm ơn bạn rất nhiều! 🧡
+            {t('coffee_thanks')}
           </p>
         </div>
 
         {/* Footer */}
         <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
-          <p>Made with ❤️ by Hubogo</p>
-          <p className="mt-1">© 2024 HubogoNote. All rights reserved.</p>
+          <p>{t('made_with')}</p>
+          <p className="mt-1">{t('copyright')}</p>
         </div>
       </div>
     </div>
