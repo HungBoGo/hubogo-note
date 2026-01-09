@@ -28,6 +28,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Get version from tauri.conf.json
+        id: get_version
+        shell: pwsh
+        run: |
+          $config = Get-Content -Raw -Path src-tauri/tauri.conf.json | ConvertFrom-Json
+          $version = $config.version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
       - name: Build Tauri (Windows)
         uses: tauri-apps/tauri-action@v0
         env:
@@ -39,20 +47,44 @@ jobs:
             ## HubogoNote v__VERSION__
 
             ### Downloads
-            - **Windows**: Chọn `.exe` (NSIS installer) hoặc `.msi`
+            - **Windows**: Tải file `.zip` để tránh cảnh báo trình duyệt
             - **macOS**: Chọn `.dmg` phù hợp với chip của bạn
               - Intel Mac: `x64.dmg`
               - Apple Silicon (M1/M2/M3): `aarch64.dmg`
 
-            ### Tính năng mới v1.0.5
-            - 🎯 Phân loại: Kiếm tiền vs Đầu tư dài hạn
-            - 📅 Điểm danh hàng ngày cho dự án dài hạn
-            - 🔥 Streak tracking - đếm ngày liên tục
-            - 🎉 Banner chúc mừng đạt mốc thu nhập
-            - 💡 Smart advice - lời khuyên thông minh
-            - 🔄 What's New dialog khi update
+            ### Cài đặt Windows
+            1. Tải file `HubogoNote_x.x.x_windows.zip`
+            2. Giải nén ra thư mục
+            3. Chạy file `HubogoNote_x.x.x_x64-setup.exe` bên trong
+
+            ---
+            🔒 **Lưu ý**: File .exe có thể bị Windows Defender cảnh báo vì app chưa có chữ ký số. Đây là app an toàn, bạn có thể chọn "Run anyway" để cài đặt.
           releaseDraft: true
           prerelease: false
+
+      - name: Create ZIP for Windows installer
+        shell: pwsh
+        run: |
+          $version = "${{ steps.get_version.outputs.VERSION }}"
+          $exePath = "src-tauri/target/release/bundle/nsis/HubogoNote_${version}_x64-setup.exe"
+          $zipPath = "src-tauri/target/release/bundle/nsis/HubogoNote_${version}_windows.zip"
+
+          if (Test-Path $exePath) {
+            Compress-Archive -Path $exePath -DestinationPath $zipPath -Force
+            Write-Host "Created ZIP: $zipPath"
+          } else {
+            Write-Host "EXE not found at: $exePath"
+            Get-ChildItem -Path "src-tauri/target/release/bundle/nsis/" -Recurse
+          }
+
+      - name: Upload ZIP to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          files: src-tauri/target/release/bundle/nsis/HubogoNote_*_windows.zip
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos-intel:
     runs-on: macos-latest

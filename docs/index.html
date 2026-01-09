@@ -617,6 +617,13 @@
       margin-bottom: 1.5rem;
     }
 
+    .download-hint {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+
     .download-btn {
       display: inline-flex;
       align-items: center;
@@ -1147,14 +1154,14 @@
           <div class="download-icon">🪟</div>
           <h3 class="download-platform">Windows</h3>
           <p class="download-info">Windows 10/11 (64-bit)</p>
-          <a id="download-win-exe" href="https://github.com/HungBoGo/hubogo-note/releases/latest" class="download-btn">
-            <span class="lang-en">Download .exe</span>
-            <span class="lang-vi">Tải .exe</span>
+          <a id="download-win-zip" href="https://github.com/HungBoGo/hubogo-note/releases/latest" class="download-btn">
+            <span class="lang-en">Download .zip</span>
+            <span class="lang-vi">Tải .zip</span>
           </a>
-          <a id="download-win-msi" href="https://github.com/HungBoGo/hubogo-note/releases/latest" class="download-btn download-btn-secondary">
-            <span class="lang-en">Download .msi</span>
-            <span class="lang-vi">Tải .msi</span>
-          </a>
+          <p class="download-hint">
+            <span class="lang-en">Extract zip → Run .exe inside</span>
+            <span class="lang-vi">Giải nén zip → Chạy .exe bên trong</span>
+          </p>
         </div>
 
         <div class="download-card fade-in">
@@ -1357,10 +1364,8 @@
             // Find download URLs from assets
             latest.assets.forEach(asset => {
               const name = asset.name.toLowerCase();
-              if (name.includes('x64-setup.exe') || name.includes('x64_setup.exe')) {
-                document.getElementById('download-win-exe').href = asset.browser_download_url;
-              } else if (name.includes('.msi')) {
-                document.getElementById('download-win-msi').href = asset.browser_download_url;
+              if (name.includes('windows.zip')) {
+                document.getElementById('download-win-zip').href = asset.browser_download_url;
               } else if (name.includes('x64.dmg')) {
                 document.getElementById('download-mac-intel').href = asset.browser_download_url;
               } else if (name.includes('aarch64.dmg') || name.includes('arm64.dmg')) {
