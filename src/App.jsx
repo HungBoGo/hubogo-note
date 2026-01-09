@@ -13,6 +13,7 @@ import WhatsNewDialog, { useWhatsNew } from "./components/WhatsNewDialog";
 import UpdateNotification from "./components/UpdateNotification";
 import { startDeadlineChecker, requestNotificationPermission } from "./utils/notifications";
 import { startAutoBackup } from "./utils/backup";
+import { initAnalytics } from "./utils/analytics";
 
 function App() {
   const { theme, loadTasks, loadCategories, tasks, exportData, selectedView, isTaskFormOpen, isCategoryFormOpen } = useStore();
@@ -22,6 +23,7 @@ function App() {
     loadTasks();
     loadCategories();
     requestNotificationPermission();
+    initAnalytics(); // Track app usage
   }, []);
 
   useEffect(() => {
