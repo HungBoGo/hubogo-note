@@ -847,6 +847,147 @@
 
     /* Language switching */
     .hide { display: none !important; }
+    /* Screenshot Carousel */
+    .screenshot-section {
+      padding: 4rem 0;
+      background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(26, 23, 48, 0.5) 100%);
+      overflow: hidden;
+    }
+
+    .carousel-container {
+      position: relative;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 0;
+    }
+
+    .carousel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      transition: transform 0.5s ease;
+      perspective: 1000px;
+    }
+
+    .carousel-slide {
+      flex-shrink: 0;
+      width: 280px;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      transition: all 0.5s ease;
+      cursor: pointer;
+      opacity: 0.5;
+      transform: scale(0.85);
+      border: 2px solid transparent;
+    }
+
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .carousel-slide.active {
+      width: 500px;
+      height: 320px;
+      opacity: 1;
+      transform: scale(1);
+      border-color: var(--green-primary);
+      box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3);
+    }
+
+    .carousel-slide.adjacent {
+      opacity: 0.7;
+      transform: scale(0.9);
+    }
+
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+    }
+
+    .carousel-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border-color);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .carousel-dot.active {
+      background: var(--green-primary);
+      transform: scale(1.2);
+    }
+
+    .carousel-dot:hover {
+      background: var(--green-light);
+    }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carousel-btn:hover {
+      background: var(--green-primary);
+      border-color: var(--green-primary);
+    }
+
+    .carousel-btn.prev {
+      left: 2rem;
+    }
+
+    .carousel-btn.next {
+      right: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .carousel-slide {
+        width: 200px;
+        height: 130px;
+      }
+
+      .carousel-slide.active {
+        width: 300px;
+        height: 200px;
+      }
+
+      .carousel-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+      }
+
+      .carousel-btn.prev {
+        left: 0.5rem;
+      }
+
+      .carousel-btn.next {
+        right: 0.5rem;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -955,6 +1096,45 @@
           <div class="stat-label lang-en">Free & Open Source</div>
           <div class="stat-label lang-vi">Miễn phí & Mã nguồn mở</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshot Carousel -->
+  <section class="screenshot-section" id="screenshots">
+    <div class="carousel-container">
+      <button class="carousel-btn prev" onclick="prevSlide()">❮</button>
+
+      <div class="carousel" id="carousel">
+        <div class="carousel-slide" onclick="goToSlide(0)">
+          <img src="./creenshot1.jpg" alt="HubogoNote Screenshot 1">
+        </div>
+        <div class="carousel-slide" onclick="goToSlide(1)">
+          <img src="./creenshot2.jpg" alt="HubogoNote Screenshot 2">
+        </div>
+        <div class="carousel-slide active" onclick="goToSlide(2)">
+          <img src="./creenshot3.jpg" alt="HubogoNote Screenshot 3">
+        </div>
+        <div class="carousel-slide" onclick="goToSlide(3)">
+          <img src="./creenshot4.jpg" alt="HubogoNote Screenshot 4">
+        </div>
+        <div class="carousel-slide" onclick="goToSlide(4)">
+          <img src="./creenshot5.jpg" alt="HubogoNote Screenshot 5">
+        </div>
+        <div class="carousel-slide" onclick="goToSlide(5)">
+          <img src="./creenshot6.jpg" alt="HubogoNote Screenshot 6">
+        </div>
+      </div>
+
+      <button class="carousel-btn next" onclick="nextSlide()">❯</button>
+
+      <div class="carousel-dots" id="carouselDots">
+        <button class="carousel-dot" onclick="goToSlide(0)"></button>
+        <button class="carousel-dot" onclick="goToSlide(1)"></button>
+        <button class="carousel-dot active" onclick="goToSlide(2)"></button>
+        <button class="carousel-dot" onclick="goToSlide(3)"></button>
+        <button class="carousel-dot" onclick="goToSlide(4)"></button>
+        <button class="carousel-dot" onclick="goToSlide(5)"></button>
       </div>
     </div>
   </section>
@@ -1404,6 +1584,62 @@
       menu.classList.remove('active');
       btn.textContent = '☰';
     }
+
+    // Screenshot Carousel
+    let currentSlide = 2; // Start with middle slide (index 2)
+    const totalSlides = 6;
+
+    function updateCarousel() {
+      const slides = document.querySelectorAll('.carousel-slide');
+      const dots = document.querySelectorAll('.carousel-dot');
+
+      slides.forEach((slide, index) => {
+        slide.classList.remove('active', 'adjacent');
+
+        if (index === currentSlide) {
+          slide.classList.add('active');
+        } else if (index === currentSlide - 1 || index === currentSlide + 1) {
+          slide.classList.add('adjacent');
+        }
+      });
+
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+      });
+
+      // Center the active slide
+      const carousel = document.getElementById('carousel');
+      const activeSlide = slides[currentSlide];
+      const carouselRect = carousel.parentElement.getBoundingClientRect();
+      const slideRect = activeSlide.getBoundingClientRect();
+
+      // Scroll to center the active slide
+      const scrollOffset = activeSlide.offsetLeft - (carouselRect.width / 2) + (slideRect.width / 2);
+      carousel.style.transform = `translateX(-${scrollOffset}px)`;
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % totalSlides;
+      updateCarousel();
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+      updateCarousel();
+    }
+
+    function goToSlide(index) {
+      currentSlide = index;
+      updateCarousel();
+    }
+
+    // Initialize carousel
+    document.addEventListener('DOMContentLoaded', function() {
+      updateCarousel();
+    });
+
+    // Auto-slide every 5 seconds
+    setInterval(nextSlide, 5000);
   </script>
 </body>
 </html>
