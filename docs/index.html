@@ -856,7 +856,7 @@
 
     .carousel-container {
       position: relative;
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       padding: 2rem 0;
     }
@@ -865,34 +865,36 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      transition: transform 0.5s ease;
-      perspective: 1000px;
+      gap: 1.5rem;
+      padding: 0 60px;
     }
 
     .carousel-slide {
       flex-shrink: 0;
-      width: 280px;
-      height: 180px;
+      width: 150px;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
       transition: all 0.5s ease;
       cursor: pointer;
-      opacity: 0.5;
-      transform: scale(0.85);
+      opacity: 0.4;
+      transform: scale(0.8);
       border: 2px solid transparent;
+      display: none;
+    }
+
+    .carousel-slide.visible {
+      display: block;
     }
 
     .carousel-slide img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
+      display: block;
     }
 
     .carousel-slide.active {
-      width: 500px;
-      height: 320px;
+      width: 400px;
       opacity: 1;
       transform: scale(1);
       border-color: var(--green-primary);
@@ -900,8 +902,15 @@
     }
 
     .carousel-slide.adjacent {
-      opacity: 0.7;
+      width: 200px;
+      opacity: 0.6;
       transform: scale(0.9);
+    }
+
+    .carousel-slide.far {
+      width: 140px;
+      opacity: 0.3;
+      transform: scale(0.8);
     }
 
     .carousel-dots {
@@ -1112,7 +1121,7 @@
         <div class="carousel-slide" onclick="goToSlide(1)">
           <img src="./creenshot2.jpg" alt="HubogoNote Screenshot 2">
         </div>
-        <div class="carousel-slide active" onclick="goToSlide(2)">
+        <div class="carousel-slide" onclick="goToSlide(2)">
           <img src="./creenshot3.jpg" alt="HubogoNote Screenshot 3">
         </div>
         <div class="carousel-slide" onclick="goToSlide(3)">
@@ -1131,7 +1140,7 @@
       <div class="carousel-dots" id="carouselDots">
         <button class="carousel-dot" onclick="goToSlide(0)"></button>
         <button class="carousel-dot" onclick="goToSlide(1)"></button>
-        <button class="carousel-dot active" onclick="goToSlide(2)"></button>
+        <button class="carousel-dot" onclick="goToSlide(2)"></button>
         <button class="carousel-dot" onclick="goToSlide(3)"></button>
         <button class="carousel-dot" onclick="goToSlide(4)"></button>
         <button class="carousel-dot" onclick="goToSlide(5)"></button>
@@ -1586,7 +1595,7 @@
     }
 
     // Screenshot Carousel
-    let currentSlide = 2; // Start with middle slide (index 2)
+    let currentSlide = 0;
     const totalSlides = 6;
 
     function updateCarousel() {
@@ -1594,28 +1603,33 @@
       const dots = document.querySelectorAll('.carousel-dot');
 
       slides.forEach((slide, index) => {
-        slide.classList.remove('active', 'adjacent');
+        slide.classList.remove('active', 'adjacent', 'far', 'visible');
 
-        if (index === currentSlide) {
-          slide.classList.add('active');
-        } else if (index === currentSlide - 1 || index === currentSlide + 1) {
-          slide.classList.add('adjacent');
+        // Calculate distance from current slide (circular)
+        let diff = index - currentSlide;
+        if (diff > totalSlides / 2) diff -= totalSlides;
+        if (diff < -totalSlides / 2) diff += totalSlides;
+
+        // Show only 5 slides: -2, -1, 0, +1, +2
+        if (Math.abs(diff) <= 2) {
+          slide.classList.add('visible');
+
+          if (diff === 0) {
+            slide.classList.add('active');
+          } else if (Math.abs(diff) === 1) {
+            slide.classList.add('adjacent');
+          } else if (Math.abs(diff) === 2) {
+            slide.classList.add('far');
+          }
+
+          // Reorder slides visually
+          slide.style.order = diff + 2;
         }
       });
 
       dots.forEach((dot, index) => {
         dot.classList.toggle('active', index === currentSlide);
       });
-
-      // Center the active slide
-      const carousel = document.getElementById('carousel');
-      const activeSlide = slides[currentSlide];
-      const carouselRect = carousel.parentElement.getBoundingClientRect();
-      const slideRect = activeSlide.getBoundingClientRect();
-
-      // Scroll to center the active slide
-      const scrollOffset = activeSlide.offsetLeft - (carouselRect.width / 2) + (slideRect.width / 2);
-      carousel.style.transform = `translateX(-${scrollOffset}px)`;
     }
 
     function nextSlide() {
