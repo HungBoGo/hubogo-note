@@ -897,7 +897,7 @@
 
     .carousel-slide.active {
       width: auto;
-      height: 650px;
+      height: 750px;
       opacity: 1;
       transform: scale(1);
       border-color: var(--green-primary);
@@ -906,14 +906,14 @@
 
     .carousel-slide.adjacent {
       width: auto;
-      height: 500px;
+      height: 580px;
       opacity: 0.7;
       transform: scale(0.95);
     }
 
     .carousel-slide.far {
       width: auto;
-      height: 380px;
+      height: 450px;
       opacity: 0.5;
       transform: scale(0.9);
     }
@@ -1663,27 +1663,14 @@
       updateCarousel();
     }
 
-    // Initialize carousel and auto-slide
-    let autoSlideInterval;
-
+    // Initialize carousel (no auto-slide - user swipes to change)
     document.addEventListener('DOMContentLoaded', function() {
       updateCarousel();
-      // Auto-slide every 4 seconds
-      autoSlideInterval = setInterval(nextSlide, 4000);
-    });
 
-    // Pause auto-slide on user interaction, resume after 8 seconds
-    function resetAutoSlide() {
-      clearInterval(autoSlideInterval);
-      autoSlideInterval = setInterval(nextSlide, 4000);
-    }
-
-    // Touch/swipe support for mobile
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    document.addEventListener('DOMContentLoaded', function() {
+      // Touch/swipe support
       const carousel = document.getElementById('carousel');
+      let touchStartX = 0;
+      let touchEndX = 0;
 
       carousel.addEventListener('touchstart', function(e) {
         touchStartX = e.changedTouches[0].screenX;
@@ -1691,25 +1678,18 @@
 
       carousel.addEventListener('touchend', function(e) {
         touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
+        const diff = touchStartX - touchEndX;
+        const swipeThreshold = 50;
+
+        if (Math.abs(diff) > swipeThreshold) {
+          if (diff > 0) {
+            nextSlide(); // Swipe left - next
+          } else {
+            prevSlide(); // Swipe right - prev
+          }
+        }
       }, { passive: true });
     });
-
-    function handleSwipe() {
-      const swipeThreshold = 50;
-      const diff = touchStartX - touchEndX;
-
-      if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-          // Swipe left - next slide
-          nextSlide();
-        } else {
-          // Swipe right - prev slide
-          prevSlide();
-        }
-        resetAutoSlide();
-      }
-    }
   </script>
 </body>
 </html>
