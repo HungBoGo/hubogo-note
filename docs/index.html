@@ -897,7 +897,7 @@
 
     .carousel-slide.active {
       width: auto;
-      height: 500px;
+      height: 550px;
       opacity: 1;
       transform: scale(1);
       border-color: var(--green-primary);
@@ -906,16 +906,16 @@
 
     .carousel-slide.adjacent {
       width: auto;
-      height: 350px;
-      opacity: 0.6;
-      transform: scale(0.9);
+      height: 400px;
+      opacity: 0.7;
+      transform: scale(0.95);
     }
 
     .carousel-slide.far {
       width: auto;
-      height: 250px;
-      opacity: 0.3;
-      transform: scale(0.8);
+      height: 300px;
+      opacity: 0.4;
+      transform: scale(0.9);
     }
 
     .carousel-dots {
@@ -977,34 +977,39 @@
     }
 
     @media (max-width: 768px) {
+      .carousel {
+        gap: 0.5rem;
+        padding: 0 40px;
+      }
+
       .carousel-slide {
-        height: 150px;
+        height: 200px;
       }
 
       .carousel-slide.active {
-        height: 350px;
+        height: 450px;
       }
 
       .carousel-slide.adjacent {
-        height: 250px;
+        height: 300px;
       }
 
       .carousel-slide.far {
-        height: 180px;
+        display: none !important;
       }
 
       .carousel-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
       }
 
       .carousel-btn.prev {
-        left: 0.5rem;
+        left: 0.25rem;
       }
 
       .carousel-btn.next {
-        right: 0.5rem;
+        right: 0.25rem;
       }
     }
 
@@ -1658,13 +1663,53 @@
       updateCarousel();
     }
 
-    // Initialize carousel
+    // Initialize carousel and auto-slide
+    let autoSlideInterval;
+
     document.addEventListener('DOMContentLoaded', function() {
       updateCarousel();
+      // Auto-slide every 4 seconds
+      autoSlideInterval = setInterval(nextSlide, 4000);
     });
 
-    // Auto-slide every 5 seconds
-    setInterval(nextSlide, 5000);
+    // Pause auto-slide on user interaction, resume after 8 seconds
+    function resetAutoSlide() {
+      clearInterval(autoSlideInterval);
+      autoSlideInterval = setInterval(nextSlide, 4000);
+    }
+
+    // Touch/swipe support for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const carousel = document.getElementById('carousel');
+
+      carousel.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      carousel.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }, { passive: true });
+    });
+
+    function handleSwipe() {
+      const swipeThreshold = 50;
+      const diff = touchStartX - touchEndX;
+
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swipe left - next slide
+          nextSlide();
+        } else {
+          // Swipe right - prev slide
+          prevSlide();
+        }
+        resetAutoSlide();
+      }
+    }
   </script>
 </body>
 </html>
