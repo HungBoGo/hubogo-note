@@ -59,7 +59,7 @@ jobs:
 
             ---
             🔒 **Lưu ý**: File .exe có thể bị Windows Defender cảnh báo vì app chưa có chữ ký số. Đây là app an toàn, bạn có thể chọn "Run anyway" để cài đặt.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
 
       - name: Create ZIP for Windows installer
@@ -82,7 +82,7 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           files: src-tauri/target/release/bundle/nsis/HubogoNote_*_windows.zip
-          draft: true
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -114,7 +114,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'HubogoNote v__VERSION__'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: '--target x86_64-apple-darwin'
 
@@ -146,6 +146,6 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'HubogoNote v__VERSION__'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: '--target aarch64-apple-darwin'
