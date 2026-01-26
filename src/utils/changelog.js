@@ -1,7 +1,38 @@
 // Changelog data for What's New dialog
-export const APP_VERSION = '1.0.8';
+export const APP_VERSION = '1.0.9';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.9',
+    date: '2026-01-26',
+    title: 'Task Filter & Screenshots',
+    title_en: 'Task Filter & Screenshots',
+    title_vi: 'Bộ lọc công việc & Ảnh chụp',
+    highlights: [
+      '🔍 Task status filter in Calendar',
+      '🖼️ Screenshot carousel on landing page',
+      '📦 Auto-zip Windows installer',
+      '🌐 Bilingual filter support'
+    ],
+    highlights_vi: [
+      '🔍 Bộ lọc trạng thái công việc',
+      '🖼️ Carousel ảnh trên landing page',
+      '📦 Tự động zip file cài đặt Windows',
+      '🌐 Hỗ trợ bộ lọc song ngữ'
+    ],
+    changes: [
+      'Added task filter: Done, Not done, Paid, Unpaid, Done but unpaid',
+      'Screenshot carousel with swipe support',
+      'Auto-zip Windows .exe to avoid browser warnings',
+      'Improved landing page mobile menu'
+    ],
+    changes_vi: [
+      'Thêm bộ lọc: Đã làm, Chưa làm, Đã TT, Chưa TT, Đã làm chưa TT',
+      'Carousel ảnh hỗ trợ vuốt',
+      'Tự động zip file .exe tránh cảnh báo trình duyệt',
+      'Cải thiện menu mobile trên landing page'
+    ]
+  },
   {
     version: '1.0.8',
     date: '2026-01-09',
