@@ -1,7 +1,7 @@
 // Update checker utility
 import { APP_VERSION, isNewerVersion } from './changelog';
 
-const GITHUB_REPO = 'huynhhung1108/hubogo-note'; // Your actual GitHub repo
+const GITHUB_REPO = 'HungBoGo/hubogo-note'; // Your actual GitHub repo
 const CHECK_INTERVAL = 6 * 60 * 60 * 1000; // Check every 6 hours
 
 // Storage keys
