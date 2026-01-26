@@ -195,6 +195,12 @@ export const translations = {
     task_calendar: 'Lịch công việc',
     no_tasks_period: 'Chưa có công việc trong khoảng thời gian này',
     add_first_task: 'Thêm công việc đầu tiên',
+    filter_all: 'Tất cả',
+    filter_done: 'Việc đã làm',
+    filter_not_done: 'Việc chưa làm',
+    filter_paid: 'Đã thanh toán',
+    filter_unpaid: 'Chưa thanh toán',
+    filter_done_unpaid: 'Đã làm, chưa TT',
 
     // Task Status View
     task_status: 'Trạng thái công việc',
@@ -591,6 +597,12 @@ export const translations = {
     task_calendar: 'Task Calendar',
     no_tasks_period: 'No tasks in this period',
     add_first_task: 'Add your first task',
+    filter_all: 'All',
+    filter_done: 'Completed',
+    filter_not_done: 'Not completed',
+    filter_paid: 'Paid',
+    filter_unpaid: 'Unpaid',
+    filter_done_unpaid: 'Done, unpaid',
 
     // Task Status View
     task_status: 'Task Status',

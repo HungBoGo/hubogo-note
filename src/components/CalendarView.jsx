@@ -24,6 +24,16 @@ function CalendarView() {
   const { tasks, categories, openTaskForm, toggleTaskComplete, toggleTaskPaid, formatMoney, formatMoneyShort } = useStore();
   const { t, language } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
+  const [statusFilter, setStatusFilter] = useState('all'); // all, done, not_done, paid, unpaid, done_unpaid
+
+  const STATUS_FILTERS = [
+    { key: 'all', label: t('filter_all') },
+    { key: 'done', label: t('filter_done') },
+    { key: 'not_done', label: t('filter_not_done') },
+    { key: 'paid', label: t('filter_paid') },
+    { key: 'unpaid', label: t('filter_unpaid') },
+    { key: 'done_unpaid', label: t('filter_done_unpaid') }
+  ];
 
   const PERIODS = [
     { key: '7d', label: t('days_7'), days: 7 },
@@ -38,7 +48,7 @@ function CalendarView() {
   const [viewOffset, setViewOffset] = useState(0); // For pagination
   const [selectedTask, setSelectedTask] = useState(null); // For detail modal
 
-  // Filter tasks by period
+  // Filter tasks by period and status
   const { filteredTasks, dateRange } = useMemo(() => {
     const now = new Date();
     const period = PERIODS.find(p => p.key === selectedPeriod);
@@ -57,16 +67,37 @@ function CalendarView() {
 
     const endDate = endOfDay(now);
 
-    const filtered = tasks.filter(task => {
+    let filtered = tasks.filter(task => {
       const taskDate = new Date(task.createdAt);
       return taskDate >= startDate && taskDate <= endDate;
     });
+
+    // Apply status filter
+    switch (statusFilter) {
+      case 'done':
+        filtered = filtered.filter(t => t.status === 'completed');
+        break;
+      case 'not_done':
+        filtered = filtered.filter(t => t.status !== 'completed');
+        break;
+      case 'paid':
+        filtered = filtered.filter(t => t.isPaid === true);
+        break;
+      case 'unpaid':
+        filtered = filtered.filter(t => t.amount > 0 && !t.isPaid);
+        break;
+      case 'done_unpaid':
+        filtered = filtered.filter(t => t.status === 'completed' && t.amount > 0 && !t.isPaid);
+        break;
+      default:
+        break;
+    }
 
     return {
       filteredTasks: filtered,
       dateRange: { start: startDate, end: endDate }
     };
-  }, [tasks, selectedPeriod]);
+  }, [tasks, selectedPeriod, statusFilter]);
 
   // Generate days array for calendar
   const calendarDays = useMemo(() => {
@@ -157,6 +188,21 @@ function CalendarView() {
               {period.label}
             </button>
           ))}
+        </div>
+
+        {/* Status filter dropdown */}
+        <div className="mt-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+          >
+            {STATUS_FILTERS.map(filter => (
+              <option key={filter.key} value={filter.key}>
+                {filter.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Quick stats */}
